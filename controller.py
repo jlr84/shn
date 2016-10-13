@@ -1,12 +1,13 @@
 import socket   # Required for network/socket connections
 import sys      # Required for standard errors used
 import os       # Required for Forking/child processes
+import time     # Required for sleep call
 import multiprocessing as mp    # Required for child process via multiprocessing
 import xmlrpcserver_module as myServer
 
 # Definitions
-serverPort = 35353
-children = []
+serverPort = 35353  # Declare what port the server will use
+children = []       # Used to track child processes
 
 def getMyIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -52,69 +53,63 @@ def runServer():
             # Clean up the connection
             connection.close()
 
+# Start a multiprocess child to run server connection as a daemon
 def childServer():
-#    while True:
-        pid = os.fork()
-        children.append(pid)
-        print "childServer Loop PID: %d" % (pid)
-        if pid == 0:
-            myServer.runServer()
+    p = mp.Process(name="ServerDaemon",target=myServer.runServer)
+    children.append(p)
+    p.daemon = True
+    p.start()
 
-        else:
-            print "Parent Process"
-#        break
+def myQuit():
+    print children
 
-def worker():
-    """worker function"""
-    print "Worker"
-    return
+    # Terminate all child processes
+    for j in children:
+        print "Alive? >> %s" % (j.is_alive())
+        print "PID: %d" % (j.pid)
+        print "Terminating child now..."
+        j.terminate()
+        print "Child terminated.\nController Exiting. Goodbye."
 
-def multServer():
-#    jobs = []
- #   for i in range(5):
-        p = mp.Process(target=myServer.runServer)
-        children.append(p)
-        p.daemon = True
-        p.start()
-
-def my_quit_fn():
+    # End Program
     raise SystemExit
+
+def checkStatus():
+    print "\nRunning Process(es): %d" % (len(children))
+    k=1
+    for j in children:
+        print "Process #%d:" % (k)
+        print "Name: %s" % (j.name)
+        print "PID: %d" % (j.pid)
+        ans = "unknown"
+        if j.is_alive():
+            ans = "YES"
+        else:
+            ans = "NO"
+        print "Alive? %s" % (ans)
+        k = k+1
 
 def invalid():
     print "INVALID CHOICE!"
 
 def myMenu():
-    m = {"1":("Connect",runServer),
-         "2":("Child Server",childServer),
-         "3":("Multiprocess Server",multServer),
-         "4":("Quit",my_quit_fn)
+    m = {"1":("Start Server",childServer),
+         "2":("Check Status",checkStatus),
+         "q":("Quit",myQuit)
            }
+    print "\nMENU:"
     for key in sorted(m.keys()):
         print key+":" + m[key][0]
     ans = raw_input("Make a Choice\n>>> ")
     m.get(ans,[None,invalid])[1]()
 
-##################
-# Start of Program
-##################
+# Start of Main
 if __name__ == '__main__':
-    print "Detecting IP Address and PID..."
     myIP = getMyIP()
     pid = os.getpid()
-    print "Host IP: %s\nParent PID: %d\n" % (myIP,pid)
+    print "Host IP: %s\nParent PID: %d" % (myIP,pid)
 
-    # Create MultiProcess for Server to use
-#    s = mp.Process(target=myServer.runServer())
-#    s.daemon = True
-
-    # Run Menu for user
-    myMenu()
-    print children
-    for j in children:
-        print "Alive? >> %s\n" % (j.is_alive)
-        print "PID: %d\n" % (j.pid)
-        print "Terminating now..."
-        j.terminate()
-#        j.join()
-
-
+    # Display Menu [repeatedly] for user
+    while True:
+        myMenu()
+        time.sleep(3)
