@@ -14,10 +14,10 @@ def divide(x, y):
     return x/y
 
 # A simple server with simple arithmetic functions
-def runServer():
+def runServer(ipAdd,portNum):
     print "runServer Module PID: %d" % (os.getpid())
-    server = SimpleXMLRPCServer(("localhost", 8000))
-    print "Listening on port 8000..."
+    server = SimpleXMLRPCServer((ipAdd, portNum))
+    print "Listening on port %d..." % (portNum)
     server.register_multicall_functions()
     server.register_function(add, 'add')
     server.register_function(subtract, 'subtract')

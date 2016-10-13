@@ -1,6 +1,6 @@
 import xmlrpclib
 
-proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+proxy = xmlrpclib.ServerProxy("http://172.31.31.111:35353/")
 multicall = xmlrpclib.MultiCall(proxy)
 multicall.add(7,3)
 multicall.subtract(7,3)

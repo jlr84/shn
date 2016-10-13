@@ -6,8 +6,9 @@ import multiprocessing as mp    # Required for child process via multiprocessing
 import xmlrpcserver_module as myServer
 
 # Definitions
-serverPort = 35353  # Declare what port the server will use
-children = []       # Used to track child processes
+serverPort = 35353      # Declare what port the server will use
+hostIP = "127.0.0.0"    # Default; updated when program is executed.
+children = []           # Used to track child processes
 
 def getMyIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -55,25 +56,12 @@ def runServer():
 
 # Start a multiprocess child to run server connection as a daemon
 def childServer():
-    p = mp.Process(name="ServerDaemon",target=myServer.runServer)
+    p = mp.Process(name="ServerDaemon",target=myServer.runServer, args=(hostIP,serverPort))
     children.append(p)
     p.daemon = True
     p.start()
 
-def myQuit():
-    print children
-
-    # Terminate all child processes
-    for j in children:
-        print "Alive? >> %s" % (j.is_alive())
-        print "PID: %d" % (j.pid)
-        print "Terminating child now..."
-        j.terminate()
-        print "Child terminated.\nController Exiting. Goodbye."
-
-    # End Program
-    raise SystemExit
-
+# Check and Display the status of all child processes
 def checkStatus():
     print "\nRunning Process(es): %d" % (len(children))
     k=1
@@ -88,6 +76,25 @@ def checkStatus():
             ans = "NO"
         print "Alive? %s" % (ans)
         k = k+1
+
+# Quit gracefully after terminting all child processes
+def myQuit():
+    # Terminate all child processes
+    for j in children:
+        print "Name: %s" % (j.name)
+        print "PID: %d" % (j.pid)
+        ans = "unknown"
+        if j.is_alive():
+            ans = "YES"
+        else:
+            ans = "NO"
+        print "Alive? %s" % (ans)
+        print "Terminating child..."
+        j.terminate()
+        print "Child terminated.\n"
+    # End Program
+    print "All children terminated.\nController Exiting. Goodbye.\n"
+    raise SystemExit
 
 def invalid():
     print "INVALID CHOICE!"
@@ -105,9 +112,9 @@ def myMenu():
 
 # Start of Main
 if __name__ == '__main__':
-    myIP = getMyIP()
+    hostIP = getMyIP()
     pid = os.getpid()
-    print "Host IP: %s\nParent PID: %d" % (myIP,pid)
+    print "Host IP: %s\nParent PID: %d" % (hostIP,pid)
 
     # Display Menu [repeatedly] for user
     while True:
