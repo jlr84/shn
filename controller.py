@@ -1,5 +1,12 @@
-import socket
-import sys
+import socket   # Required for network/socket connections
+import sys      # Required for standard errors used
+import os       # Required for Forking/child processes
+import multiprocessing as mp    # Required for child process via multiprocessing
+import xmlrpcserver_module as myServer
+
+# Definitions
+serverPort = 35353
+children = []
 
 def getMyIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -16,7 +23,7 @@ def runServer():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Bind the socket to the port
-    server_address = (ipAddress, 10000)
+    server_address = (ipAddress, serverPort)
     print >>sys.stderr, 'starting up on %s port %s' % server_address
     sock.bind(server_address)
 
@@ -45,6 +52,31 @@ def runServer():
             # Clean up the connection
             connection.close()
 
+def childServer():
+#    while True:
+        pid = os.fork()
+        children.append(pid)
+        print "childServer Loop PID: %d" % (pid)
+        if pid == 0:
+            myServer.runServer()
+
+        else:
+            print "Parent Process"
+#        break
+
+def worker():
+    """worker function"""
+    print "Worker"
+    return
+
+def multServer():
+#    jobs = []
+ #   for i in range(5):
+        p = mp.Process(target=myServer.runServer)
+        children.append(p)
+        p.daemon = True
+        p.start()
+
 def my_quit_fn():
     raise SystemExit
 
@@ -53,7 +85,9 @@ def invalid():
 
 def myMenu():
     m = {"1":("Connect",runServer),
-         "2":("Quit",my_quit_fn)
+         "2":("Child Server",childServer),
+         "3":("Multiprocess Server",multServer),
+         "4":("Quit",my_quit_fn)
            }
     for key in sorted(m.keys()):
         print key+":" + m[key][0]
@@ -63,11 +97,24 @@ def myMenu():
 ##################
 # Start of Program
 ##################
+if __name__ == '__main__':
+    print "Detecting IP Address and PID..."
+    myIP = getMyIP()
+    pid = os.getpid()
+    print "Host IP: %s\nParent PID: %d\n" % (myIP,pid)
 
-print "Detecting IP Address..."
-myIP = getMyIP()
-print "Host IP: %s\n" % (myIP)
+    # Create MultiProcess for Server to use
+#    s = mp.Process(target=myServer.runServer())
+#    s.daemon = True
 
-# Run Menu for user
-myMenu()
+    # Run Menu for user
+    myMenu()
+    print children
+    for j in children:
+        print "Alive? >> %s\n" % (j.is_alive)
+        print "PID: %d\n" % (j.pid)
+        print "Terminating now..."
+        j.terminate()
+#        j.join()
+
 
