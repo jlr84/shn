@@ -1,120 +1,98 @@
 import socket   # Required for network/socket connections
-import sys      # Required for standard errors used
 import os       # Required for Forking/child processes
 import time     # Required for sleep call
 import multiprocessing as mp    # Required for child process via multiprocessing
-import xmlrpcserver_module as myServer
+import server_module as myServer
 
 # Definitions
 serverPort = 35353      # Declare what port the server will use
-hostIP = "127.0.0.0"    # Default; updated when program is executed.
+hostIP = "localhost"    # Default; updated when program is executed.
 children = []           # Used to track child processes
+CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
+KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
+
 
 def getMyIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8",53))
+    s.connect(("8.8.8.8", 53))
     ipAdd = s.getsockname()[0]
     s.close()
     return ipAdd
 
-def runServer():
-    # Determine IP Address
-    ipAddress = getMyIP()
-
-    # Create a TCP/IP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Bind the socket to the port
-    server_address = (ipAddress, serverPort)
-    print >>sys.stderr, 'starting up on %s port %s' % server_address
-    sock.bind(server_address)
-
-    # Listen for incoming connections
-    sock.listen(1)
-
-    while True:
-        # Wait for a connection
-        print >>sys.stderr, 'waiting for a connection'
-        connection, client_address = sock.accept()
-
-        try:
-            print >>sys.stderr, 'connection from', client_address
-
-            # Receive the data in small chunks and retransmit it
-            while True:
-                data = connection.recv(16)
-                print >>sys.stderr, 'received "%s"' % data
-                if data:
-                    print >>sys.stderr, 'sending data back to the client'
-                    connection.sendall(data)
-                else:
-                    print >>sys.stderr, 'no more data from', client_address
-                    break
-        finally:
-            # Clean up the connection
-            connection.close()
 
 # Start a multiprocess child to run server connection as a daemon
-def childServer():
-    p = mp.Process(name="ServerDaemon",target=myServer.runServer, args=(hostIP,serverPort))
+def startServer():
+    p = mp.Process(name="ServerDaemon",
+                   target=myServer.runServer,
+                   args=("localhost",   # CHANGE BACK TO hostIP after testing
+                         serverPort,
+                         CERTFILE,
+                         KEYFILE
+                         )
+                   )
     children.append(p)
     p.daemon = True
     p.start()
 
+
 # Check and Display the status of all child processes
 def checkStatus():
-    print "\nRunning Process(es): %d" % (len(children))
-    k=1
+    print("\nRunning Process(es): %d" % (len(children)))
+    k = 1
     for j in children:
-        print "Process #%d:" % (k)
-        print "Name: %s" % (j.name)
-        print "PID: %d" % (j.pid)
+        print("Process #%d:" % (k))
+        print("Name: %s" % (j.name))
+        print("PID: %d" % (j.pid))
         ans = "unknown"
         if j.is_alive():
             ans = "YES"
         else:
             ans = "NO"
-        print "Alive? %s" % (ans)
+        print("Alive? %s" % (ans))
         k = k+1
+
 
 # Quit gracefully after terminting all child processes
 def myQuit():
     # Terminate all child processes
     for j in children:
-        print "Name: %s" % (j.name)
-        print "PID: %d" % (j.pid)
+        print("Name: %s" % (j.name))
+        print("PID: %d" % (j.pid))
         ans = "unknown"
         if j.is_alive():
             ans = "YES"
         else:
             ans = "NO"
-        print "Alive? %s" % (ans)
-        print "Terminating child..."
+        print("Alive? %s" % (ans))
+        print("Terminating child...")
         j.terminate()
-        print "Child terminated.\n"
+        print("Child terminated.\n")
     # End Program
-    print "All children terminated.\nController Exiting. Goodbye.\n"
+    print("All children terminated.\nController Exiting. Goodbye.\n")
     raise SystemExit
 
+
 def invalid():
-    print "INVALID CHOICE!"
+    print("INVALID CHOICE!")
+
 
 def myMenu():
-    m = {"1":("Start Server",childServer),
-         "2":("Check Status",checkStatus),
-         "q":("Quit",myQuit)
-           }
-    print "\nMENU:"
+    m = {"1": ("Start Server", startServer),
+         "2": ("Check Status", checkStatus),
+         "q": ("Quit", myQuit)
+         }
+    print("\nMENU:")
     for key in sorted(m.keys()):
-        print key+":" + m[key][0]
-    ans = raw_input("Make a Choice\n>>> ")
-    m.get(ans,[None,invalid])[1]()
+        print(key+":" + m[key][0])
+    ans = input("Make a Choice\n>>> ")
+    m.get(ans, [None, invalid])[1]()
+
 
 # Start of Main
 if __name__ == '__main__':
     hostIP = getMyIP()
     pid = os.getpid()
-    print "Host IP: %s\nParent PID: %d" % (hostIP,pid)
+    print("Host IP: %s\nParent PID: %d" % (hostIP, pid))
 
     # Display Menu [repeatedly] for user
     while True:

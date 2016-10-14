@@ -1,30 +1,11 @@
-import socket
-import sys
+import xmlrpc.client
+import ssl
 
-# Create a TCP/IP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+CACERTFILE = "certs/ca.cert"
 
-# Connect the socket to the port where the server is listening
-server_address = ('localhost', 10000)
-print >>sys.stderr, 'connecting to %s port %s' % server_address
-sock.connect(server_address)
+myContext = ssl.create_default_context()
+myContext.load_verify_locations(CACERTFILE)
 
-try:
-    # Send data
-    message = 'This is the message.  It will be repeated.'
-    print >>sys.stderr, 'sending "%s"' % message
-    sock.sendall(message)
-
-    # Look for the response
-    amount_received = 0
-    amount_expected = len(message)
-    while amount_received < amount_expected:
-        data = sock.recv(16)
-        amount_received += len(data)
-        print >>sys.stderr, 'received "%s"' % data
-
-finally:
-    print >>sys.stderr, 'closing socket'
-    sock.close()
-
-
+with xmlrpc.client.ServerProxy("https://localhost:35353/", context=myContext) as proxy:
+    print("3 + 7 is: %d" % (proxy.add(3,7)))
+    print("11 x 9 is: %d" % (proxy.multiply(11,9)))
