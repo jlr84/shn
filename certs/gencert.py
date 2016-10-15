@@ -78,9 +78,11 @@ CA_KEY = 'ca.key'
 # http://www.openssl.org/docs/apps/openssl.html#PASS_PHRASE_ARGUMENTS
 X509_EXTRA_ARGS = ('-passin', 'pass:password')
 
+
 def openssl(*args):
     cmdline = [OPENSSL] + list(args)
     subprocess.check_call(cmdline)
+
 
 def gencert(domain, rootdir=MYDIR, keysize=KEY_SIZE, days=DAYS,
             ca_cert=CA_CERT, ca_key=CA_KEY):
@@ -105,17 +107,19 @@ def gencert(domain, rootdir=MYDIR, keysize=KEY_SIZE, days=DAYS,
     openssl('x509', '-req', '-days', str(days), '-in', dfile('request'),
             '-CA', ca_cert, '-CAkey', ca_key,
             '-set_serial',
-            '0x%s' % hashlib.md5(domain +
-                                 str(datetime.datetime.now())).hexdigest(),
+            '0x%s' % hashlib.md5((domain +
+                                 str(datetime.datetime.now()))
+                                 .encode('utf-8')).hexdigest(),
             '-out', dfile('cert'),
             '-extensions', 'v3_req', '-extfile', dfile('config'),
             *X509_EXTRA_ARGS)
 
-    print "Done. The private key is at %s, the cert is at %s, and the " \
-          "CA cert is at %s." % (dfile('key'), dfile('cert'), ca_cert)
+    print ("Done.\n  The private key is at %s" % (dfile('key')))
+    print("  The cert is at %s" % (dfile('cert')))
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "usage: %s <domain-name>" % sys.argv[0]
+        print ("usage: %s <domain-name>" % sys.argv[0])
         sys.exit(1)
     gencert(sys.argv[1])

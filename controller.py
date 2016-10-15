@@ -1,13 +1,17 @@
 import socket   # Required for network/socket connections
 import os       # Required for Forking/child processes
 import time     # Required for sleep call
+from pathlib import Path        # Required for determine file paths
 import multiprocessing as mp    # Required for child process via multiprocessing
 import server_module as myServer
+import certs.gencert as gencert
+
 
 # Definitions
 serverPort = 35353      # Declare what port the server will use
 hostIP = "localhost"    # Default; updated when program is executed.
 children = []           # Used to track child processes
+certPath = "certs/domains/"                 # Path for ip-based ssl cert files
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
 KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
 
@@ -20,11 +24,41 @@ def getMyIP():
     return ipAdd
 
 
+# Create SSL certs for current ip address if not already present
+def verifyCerts():
+    global CERTFILE
+    global KEYFILE
+
+    # Determine file path based on current ip address
+    print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
+    CERTFILE = ''.join([certPath, hostIP, ".cert"])
+    KEYFILE = ''.join([certPath, hostIP, ".key"])
+    print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
+
+    # Change to file path format
+    file1 = Path(CERTFILE)
+    file2 = Path(KEYFILE)
+
+    # If cert or key file not present, create new certs
+    if not (file1.is_file()) or not (file2.is_file()):
+        gencert.gencert(hostIP)
+        print("Certfile(s) NOT present; new certs created.")
+
+    else:
+        print("Certfiles Verified Present")
+
+
 # Start a multiprocess child to run server connection as a daemon
 def startServer():
+
+    # Verify certificates present prior to starting server
+#    verifyCerts()
+#    time.sleep(3)
+
+    # Now, start daemon server
     p = mp.Process(name="ServerDaemon",
                    target=myServer.runServer,
-                   args=("localhost",   # CHANGE BACK TO hostIP after testing
+                   args=("localhost",
                          serverPort,
                          CERTFILE,
                          KEYFILE
@@ -79,6 +113,7 @@ def invalid():
 def myMenu():
     m = {"1": ("Start Server", startServer),
          "2": ("Check Status", checkStatus),
+         "3": ("Verify Certs", verifyCerts),
          "q": ("Quit", myQuit)
          }
     print("\nMENU:")

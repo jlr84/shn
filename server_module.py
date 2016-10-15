@@ -29,6 +29,8 @@ def divide(x, y):
 def runServer(ipAdd, portNum, serverCert, serverKey):
     print("runServer Module PID: %d" % (os.getpid()))
 
+    print("serverCert: %s\nserverKey: %s" % (serverCert, serverKey))
+
     # Create XMLRPC Server, based on ipAdd/port received
     server = SimpleXMLRPCServer((ipAdd, portNum))
 
