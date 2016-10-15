@@ -10,18 +10,29 @@ import certs.gencert as gencert
 # Definitions
 serverPort = 35353      # Declare what port the server will use
 hostIP = "localhost"    # Default; updated when program is executed.
+hostName = "localhost"  # Default; updated when program is executed.
 children = []           # Used to track child processes
 certPath = "certs/domains/"                 # Path for ip-based ssl cert files
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
 KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
 
 
+# Return ip address of local host where server is running
 def getMyIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 53))
     ipAdd = s.getsockname()[0]
     s.close()
     return ipAdd
+
+
+# Return host name/fqdn of based on give ip address
+def findHostName(ipAddress):
+    try:
+        name, alias, addresslist = socket.gethostbyaddr(ipAddress)
+        return name
+    except socket.herror:
+        return "None"
 
 
 # Create SSL certs for current ip address if not already present
@@ -31,8 +42,8 @@ def verifyCerts():
 
     # Determine file path based on current ip address
     print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
-    CERTFILE = ''.join([certPath, hostIP, ".cert"])
-    KEYFILE = ''.join([certPath, hostIP, ".key"])
+    CERTFILE = ''.join([certPath, hostName, ".cert"])
+    KEYFILE = ''.join([certPath, hostName, ".key"])
     print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
 
     # Change to file path format
@@ -41,7 +52,7 @@ def verifyCerts():
 
     # If cert or key file not present, create new certs
     if not (file1.is_file()) or not (file2.is_file()):
-        gencert.gencert(hostIP)
+        gencert.gencert(hostName)
         print("Certfile(s) NOT present; new certs created.")
 
     else:
@@ -52,8 +63,7 @@ def verifyCerts():
 def startServer():
 
     # Verify certificates present prior to starting server
-#    verifyCerts()
-#    time.sleep(3)
+    verifyCerts()
 
     # Now, start daemon server
     p = mp.Process(name="ServerDaemon",
@@ -126,10 +136,17 @@ def myMenu():
 # Start of Main
 if __name__ == '__main__':
     hostIP = getMyIP()
+    hostName = findHostName(hostIP)
     pid = os.getpid()
-    print("Host IP: %s\nParent PID: %d" % (hostIP, pid))
+    print("Host IP: %s\nHostname: %s\nParent PID: %d" % (hostIP, hostName, pid))
 
-    # Display Menu [repeatedly] for user
-    while True:
-        myMenu()
-        time.sleep(3)
+    if hostName == "None":
+        print("\nHostname/FQDN not found:\n   > Hostname/FQDN Required.")
+        print("   > Correct by adding record in DNS server or within local")
+        print("   hosts file and then restart controller.\n")
+    else:
+
+        # Display Menu [repeatedly] for user
+        while True:
+            myMenu()
+            time.sleep(3)
