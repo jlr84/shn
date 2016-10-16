@@ -1,6 +1,8 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
 import os
+import controller
+import threading
 
 
 ######################################
@@ -20,6 +22,24 @@ def multiply(x, y):
 
 def divide(x, y):
     return x/y
+
+
+def connectToServer(hostName, portNum):
+
+    # Start child process to run function for
+    #  communicating with Agent
+    tName = ''.join(["Server-", hostName])
+    t = threading.Thread(name=tName,
+                         target=controller.controlAgent,
+                         args=(hostName,
+                               portNum
+                               )
+                         )
+    t.daemon = True
+    t.start()
+
+    # Connect to Agent running at hostName, listening on portNum
+    return "Connecting"
 
 
 #########################################
@@ -47,6 +67,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     server.register_function(subtract, 'subtract')
     server.register_function(multiply, 'multiply')
     server.register_function(divide, 'divide')
+    server.register_function(connectToServer, 'connectToServer')
 
     # Start server listening [forever]
     server.serve_forever()
