@@ -10,7 +10,7 @@ import certs.gencert as gencert
 # Definitions
 serverPort = 35353      # Declare what port the server will use
 hostIP = "localhost"    # Default; updated when program is executed.
-hostName = "localhost"  # Default; updated when program is executed.
+hostName = "controller.shn.local"  # Default; updated when program is executed.
 children = []           # Used to track child processes
 certPath = "certs/domains/"                 # Path for ip-based ssl cert files
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
@@ -136,7 +136,7 @@ def myMenu():
 # Start of Main
 if __name__ == '__main__':
     hostIP = getMyIP()
-    hostName = findHostName(hostIP)
+#    hostName = findHostName(hostIP)
     pid = os.getpid()
     print("Host IP: %s\nHostname: %s\nParent PID: %d" % (hostIP, hostName, pid))
 
