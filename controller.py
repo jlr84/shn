@@ -7,11 +7,15 @@ import server_module as myServer
 import certs.gencert as gencert
 
 
-# Definitions
-serverPort = 35353      # Declare what port the server will use
-hostIP = "localhost"    # Default; updated when program is executed.
-hostName = "controller.shn.local"  # Default; updated when program is executed.
-children = []           # Used to track child processes
+# Adjustable Settings:
+serverPort = 35353                  # Declare what port the server will use
+hostName = "controller.shn.local"   # Default; VERIFIED when program is executed.
+rootDomain = "shn.local"            # Default
+certName = "shn.local"              # Default
+
+# Declarations: Do not change
+hostIP = "localhost"                # Default; updated when program is executed.
+children = []                       # Used to track child processes
 certPath = "certs/domains/"                 # Path for ip-based ssl cert files
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
 KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
@@ -42,8 +46,8 @@ def verifyCerts():
 
     # Determine file path based on current ip address
     print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
-    CERTFILE = ''.join([certPath, hostName, ".cert"])
-    KEYFILE = ''.join([certPath, hostName, ".key"])
+    CERTFILE = ''.join([certPath, rootDomain, ".cert"])
+    KEYFILE = ''.join([certPath, rootDomain, ".key"])
     print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
 
     # Change to file path format
@@ -52,7 +56,7 @@ def verifyCerts():
 
     # If cert or key file not present, create new certs
     if not (file1.is_file()) or not (file2.is_file()):
-        gencert.gencert(hostName)
+        gencert.gencert(rootDomain)
         print("Certfile(s) NOT present; new certs created.")
 
     else:
@@ -136,17 +140,23 @@ def myMenu():
 # Start of Main
 if __name__ == '__main__':
     hostIP = getMyIP()
-    hostName = findHostName(hostIP)
+    verifyHostName = findHostName(hostIP)
     pid = os.getpid()
-    print("Host IP: %s\nHostname: %s\nParent PID: %d" % (hostIP, hostName, pid))
+    print("Host IP: %s\nHostname: %s\nParent PID: %d" % (hostIP, verifyHostName, pid))
 
-    if hostName == "None":
+    if verifyHostName == "None":
         print("\nHostname/FQDN not found:\n   > Hostname/FQDN Required.")
         print("   > Correct by adding record in DNS server or within local")
         print("   hosts file and then restart controller.\n")
-    else:
 
+    elif verifyHostName == hostName:
         # Display Menu [repeatedly] for user
         while True:
             myMenu()
             time.sleep(3)
+
+    else:
+        print("\nHostname incorrect:")
+        print("   > Hostname Found: %s" % (verifyHostName))
+        print("   > Hostname Required: %s" % (hostName))
+
