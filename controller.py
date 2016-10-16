@@ -68,7 +68,7 @@ def startServer():
     # Now, start daemon server
     p = mp.Process(name="ServerDaemon",
                    target=myServer.runServer,
-                   args=("localhost",
+                   args=(hostIP,
                          serverPort,
                          CERTFILE,
                          KEYFILE
@@ -136,7 +136,7 @@ def myMenu():
 # Start of Main
 if __name__ == '__main__':
     hostIP = getMyIP()
-#    hostName = findHostName(hostIP)
+    hostName = findHostName(hostIP)
     pid = os.getpid()
     print("Host IP: %s\nHostname: %s\nParent PID: %d" % (hostIP, hostName, pid))
 
