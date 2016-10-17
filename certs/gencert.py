@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 
 """
     This simple script makes it easy to create server certificates
@@ -42,6 +42,7 @@ import sys
 import hashlib
 import subprocess
 import datetime
+import time
 
 OPENSSL_CONFIG_TEMPLATE = """
 prompt = no
@@ -81,11 +82,12 @@ X509_EXTRA_ARGS = ('-passin', 'pass:password')
 
 def openssl(*args):
     cmdline = [OPENSSL] + list(args)
-    subprocess.check_call(cmdline)
+    subprocess.call(cmdline)
 
 
 def gencert(domain, rootdir=MYDIR, keysize=KEY_SIZE, days=DAYS,
             ca_cert=CA_CERT, ca_key=CA_KEY):
+    print("MYDIR: \n%s\n" % MYDIR)
     def dfile(ext):
         return os.path.join('domains', '%s.%s' % (domain, ext))
 
@@ -123,3 +125,4 @@ if __name__ == "__main__":
         print ("usage: %s <domain-name>" % sys.argv[0])
         sys.exit(1)
     gencert(sys.argv[1])
+    time.sleep(30)
