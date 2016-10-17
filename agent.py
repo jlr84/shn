@@ -4,7 +4,6 @@ import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
-from pathlib import Path        # Required for determine file paths
 import server_agent as myServer
 import certs.gencert as gencert
 
@@ -47,19 +46,15 @@ def verifyCerts():
     global KEYFILE
 
     # Determine file path based on current ip address
-    print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
     CERTFILE = ''.join([certPath, rootDomain, ".cert"])
     KEYFILE = ''.join([certPath, rootDomain, ".key"])
     print("CERTFILE: %s\nKEYFILE: %s" % (CERTFILE, KEYFILE))
 
-    # Change to file path format
-    file1 = Path(CERTFILE)
-    file2 = Path(KEYFILE)
-
     # If cert or key file not present, create new certs
-    if not (file1.is_file()) or not (file2.is_file()):
+    if not os.path.isfile(CERTFILE) or not os.path.isfile(KEYFILE):
         gencert.gencert(rootDomain)
         print("Certfile(s) NOT present; new certs created.")
+        print("Note: You may need to quit & restart Agent.")
 
     else:
         print("Certfiles Verified Present")
@@ -120,7 +115,7 @@ def mathTest():
 
 # Quit gracefully after terminting all child processes
 def myQuit():
-    print("Controller Exiting. Goodbye.\n")
+    print("Agent Exiting. Goodbye.\n")
     raise SystemExit
 
 
@@ -167,7 +162,7 @@ if __name__ == '__main__':
     if verifyHostName == "None":
         print("\nHostname/FQDN not found:\n   > Hostname/FQDN Required.")
         print("   > Correct by adding record in DNS server or within local")
-        print("   hosts file and then restart controller.\n")
+        print("   hosts file (/etc/hosts) and then restart controller.\n")
 
     elif verifyHostName in [hostName, "controller.shn.local"]:
         # Display Menu [repeatedly] for user

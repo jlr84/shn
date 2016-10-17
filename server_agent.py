@@ -1,8 +1,6 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
 import os
-import controller
-import threading
 
 
 ######################################
@@ -37,20 +35,25 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     server = SimpleXMLRPCServer((ipAdd, portNum))
 
     # Create/Wrap server socket with ssl
-    server.socket = ssl.wrap_socket(server.socket,
-                                    certfile=serverCert,
-                                    keyfile=serverKey,
-                                    do_handshake_on_connect=True,
-                                    server_side=True)
+    try:
+        server.socket = ssl.wrap_socket(server.socket,
+                                        certfile=serverCert,
+                                        keyfile=serverKey,
+                                        do_handshake_on_connect=True,
+                                        server_side=True)
 
-    # Register available functions
-    server.register_multicall_functions()
-    server.register_function(add, 'add')
-    server.register_function(subtract, 'subtract')
-    server.register_function(multiply, 'multiply')
-    server.register_function(divide, 'divide')
+        # Register available functions
+        server.register_multicall_functions()
+        server.register_function(add, 'add')
+        server.register_function(subtract, 'subtract')
+        server.register_function(multiply, 'multiply')
+        server.register_function(divide, 'divide')
 
-    # Start server listening [forever]
-    server.serve_forever()
+        # Start server listening [forever]
+        server.serve_forever()
 
-    print("Listening on port %d..." % (portNum))
+        print("Listening on port %d..." % (portNum))
+    except OSError:
+        print("ERROR!!!\n--Error creating socket...")
+        print("--CERT or KEY FILE not found.")
+        print("--QUIT and RESTART CONTROLLRE.")
