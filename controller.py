@@ -1,9 +1,11 @@
+import xmlrpc.client
+import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
 from pathlib import Path        # Required for determine file paths
-import server_module as myServer
+import server_controller as myServer
 import certs.gencert as gencert
 
 
@@ -14,10 +16,11 @@ rootDomain = "shn.local"            # Default
 certName = "shn.local"              # Default
 
 # Declarations: Do not change
-hostIP = "localhost"                # Default; updated when program is executed.
 certPath = "certs/domains/"                 # Path for ip-based ssl cert files
+CACERTFILE = "certs/ca.cert"                # Location of CA Cert
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
 KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
+hostIP = "localhost"                # Default; updated when program is executed.
 
 
 # Return ip address of local host where server is running
@@ -108,6 +111,15 @@ def checkStatus():
 def controlAgent(hostName, portNum):
 
     # Connect to Agent's server daemon
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(CACERTFILE)
+
+    thisHost = ''.join(['https://', hostName, ':', str(portNum)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+        print("4 + 34 is %d" % (proxy.add(4, 34)))
+        print("33 x 3 is %d" % (proxy.multiply(33, 3)))
 
     # Run check on system status
 
@@ -116,6 +128,23 @@ def controlAgent(hostName, portNum):
     while True:
         print("ControlAgent: Sleeping 30...")
         time.sleep(30)
+
+
+# Start a thread child to run control agent as daemon
+def startControlAgent(hostName, portNum):
+
+    # Verify certificates present prior to starting server
+    verifyCerts()
+
+    # Now, start thread
+    t = threading.Thread(name="ControlAgent",
+                         target=controlAgent,
+                         args=(hostName,
+                               portNum
+                               )
+                         )
+    t.daemon = True
+    t.start()
 
 
 # Quit gracefully after terminting all child processes
@@ -128,17 +157,31 @@ def invalid():
     print("INVALID CHOICE!")
 
 
+def menu():
+    print("MENU:")
+    print("1) Start CONTROLLER Server")
+    print("2) Check Status")
+    print("3) Verify Certs")
+    print("4) Control Agent")
+    print("q) QUIT")
+    return input("Make a Choice\n>>> ")
+
+
 def myMenu():
-    m = {"1": ("Start Server", startServer),
-         "2": ("Check Status", checkStatus),
-         "3": ("Verify Certs", verifyCerts),
-         "q": ("Quit", myQuit)
-         }
-    print("\nMENU:")
-    for key in sorted(m.keys()):
-        print(key+":" + m[key][0])
-    ans = input("Make a Choice\n>>> ")
-    m.get(ans, [None, invalid])[1]()
+    choice = 0
+    choice = menu()
+    if choice == "1":
+        startServer()
+    elif choice == "2":
+        checkStatus()
+    elif choice == "3":
+        verifyCerts()
+    elif choice == "4":
+        startControlAgent("controller.shn.local", 27878)
+    elif choice == "q":
+        myQuit()
+    else:
+        invalid()
 
 
 # Start of Main
