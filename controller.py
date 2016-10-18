@@ -47,7 +47,9 @@ def findHostName(ipAddress):
         log.debug('Returning name: %s' % name)
         return name
     except socket.herror:
-        log.exception('Find Host Name socket error')
+        log.exception("Hostname/FQDN not found: Hostname/FQDN Required. "
+                      "Correct by adding record in DNS server or within local"
+                      "hosts file (/etc/hosts) and then restart controller.")
         return "None"
 
 
@@ -177,8 +179,8 @@ def myQuit():
     raise SystemExit
 
 
-def invalid():
-    log.debug("Invalid choice")
+def invalid(choice):
+    log.debug("Invalid choice: %s" % choice)
     print("INVALID CHOICE!")
 
 
@@ -207,7 +209,7 @@ def myMenu():
     elif choice == "q":
         myQuit()
     else:
-        invalid()
+        invalid(choice)
 
 
 # Start of Main
@@ -221,9 +223,7 @@ if __name__ == '__main__':
     log.debug("PID: %d" % (pid))
 
     if verifyHostName == "None":
-        log.error("Hostname/FQDN not found: Hostname/FQDN Required.\
-                  Correct by adding record in DNS server or within local\
-                  hosts file (/etc/hosts) and then restart controller.")
+        log.debug("Hostname not found: Returned 'None'")
 
     elif verifyHostName == hostName:
         log.debug("HostName verified.")
@@ -238,6 +238,6 @@ if __name__ == '__main__':
             time.sleep(3)
 
     else:
-        log.error("Hostname incorrect:\
-                  Hostname Found: %s\
-                  Hostname Required: %s" % (verifyHostName, hostName))
+        log.error("Hostname incorrect. "
+                  "Hostname Found: %s; "
+                  "Hostname Required: %s." % (verifyHostName, hostName))

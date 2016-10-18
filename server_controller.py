@@ -78,6 +78,6 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.serve_forever()
 
     except OSError:
-        log.exception("ERROR creating socket...")
-        log.critical("--CERT or KEY FILE not found.")
-        log.critical("--QUIT and RESTART CONTROLLER.")
+        log.exception("ERROR creating socket... "
+                      "CERT or KEY FILE not found. "
+                      "QUIT and RESTART CONTROLLER.")

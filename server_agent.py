@@ -1,6 +1,6 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
-import os
+import logging
 
 
 ######################################
@@ -27,15 +27,17 @@ def divide(x, y):
 # for responding to client requests.
 #########################################
 def runServer(ipAdd, portNum, serverCert, serverKey):
-    print("agentServer Module PID: %d" % (os.getpid()))
-
-    print("serverCert: %s\nserverKey: %s" % (serverCert, serverKey))
+    log = logging.getLogger(__name__)
+    log.info("Starting runServer Module")
+    log.debug("serverCert: %s" % (serverCert))
+    log.debug("serverKey: %s" % (serverKey))
 
     # Create XMLRPC Server, based on ipAdd/port received
     server = SimpleXMLRPCServer((ipAdd, portNum))
 
     # Create/Wrap server socket with ssl
     try:
+        log.debug("Trying socket now...")
         server.socket = ssl.wrap_socket(server.socket,
                                         certfile=serverCert,
                                         keyfile=serverKey,
@@ -43,6 +45,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
                                         server_side=True)
 
         # Register available functions
+        log.debug("Registering Functions")
         server.register_multicall_functions()
         server.register_function(add, 'add')
         server.register_function(subtract, 'subtract')
@@ -50,10 +53,11 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(divide, 'divide')
 
         # Start server listening [forever]
+        log.info("Server listening on port %d..." % (portNum))
+        print("Server listening on port %d..." % (portNum))
         server.serve_forever()
 
-        print("Listening on port %d..." % (portNum))
     except OSError:
-        print("ERROR!!!\n--Error creating socket...")
-        print("--CERT or KEY FILE not found.")
-        print("--QUIT and RESTART CONTROLLRE.")
+        log.exception("ERROR creating socket... "
+                      "CERT or KEY FILE not found. "
+                      "QUIT and RESTART CONTROLLRE.")
