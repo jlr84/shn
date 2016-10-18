@@ -66,19 +66,18 @@ def verifyCerts():
     if not os.path.isfile(CERTFILE) or not os.path.isfile(KEYFILE):
         gencert.gencert(rootDomain)
         log.info("Certfile(s) NOT present; new certs created.")
-        log.warning("Note: You may need to quit & restart Controller.")
+        print("Certfile(s) NOT present; new certs created.")
+        print("Note: You may need to quit & restart Controller.")
 
     else:
         log.info("Certfiles Verified Present")
+        print("Certfiles Verified Present.")
 
 
 # Start a thread child to run server connection as a daemon
 def startServer():
 
     log.info("Starting Server...")
-    log.debug("Verifying certificates.")
-    # Verify certificates present prior to starting server
-    verifyCerts()
 
     # Now, start thread
     log.debug("Starting new thread...")
@@ -124,6 +123,7 @@ def checkStatus():
 def controlAgent(hostName, portNum):
 
     log.debug("Start of controlAgent Function...")
+    print("ControlAgent Daemon Started")
     # Connect to Agent's server daemon
     myContext = ssl.create_default_context()
     myContext.load_verify_locations(CACERTFILE)
@@ -132,8 +132,15 @@ def controlAgent(hostName, portNum):
 
     with xmlrpc.client.ServerProxy(thisHost,
                                    context=myContext) as proxy:
-        print("4 + 34 is %d" % (proxy.add(4, 34)))
-        print("33 x 3 is %d" % (proxy.multiply(33, 3)))
+
+        try:
+            print("4 + 34 is %d" % (proxy.add(4, 34)))
+            print("33 x 3 is %d" % (proxy.multiply(33, 3)))
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
 
     # Run check on system status
 
@@ -149,9 +156,6 @@ def controlAgent(hostName, portNum):
 def startControlAgent(hostName, portNum):
 
     log.info("Starting Server...")
-    log.debug("Verifying certificates.")
-    # Verify certificates present prior to starting server
-    verifyCerts()
 
     # Now, start thread
     log.debug("Starting new thread...")
@@ -168,7 +172,8 @@ def startControlAgent(hostName, portNum):
 
 # Quit gracefully after terminting all child processes
 def myQuit():
-    log.info("Controller Exiting. Goodbye.\n")
+    log.info("Controller Exiting. Goodbye.")
+    print("Controller Exiting. Goodbye.\n")
     raise SystemExit
 
 
@@ -179,7 +184,7 @@ def invalid():
 
 def menu():
     log.debug("Displaying menu")
-    print("MENU:")
+    print("\nMENU:")
     print("1) Start CONTROLLER Server")
     print("2) Check Status")
     print("3) Verify Certs")
@@ -222,6 +227,11 @@ if __name__ == '__main__':
 
     elif verifyHostName == hostName:
         log.debug("HostName verified.")
+
+        log.debug("Verifying certificates.")
+        # Verify certificates present prior to displaying menu
+        verifyCerts()
+
         # Display Menu [repeatedly] for user
         while True:
             myMenu()

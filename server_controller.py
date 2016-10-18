@@ -73,10 +73,9 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(connectToServer, 'connectToServer')
 
         # Start server listening [forever]
-        log.debug("Functions registered; Starting Server")
+        log.info("Server listening on port %d." % (portNum))
+        print("Server listening on port %d." % (portNum))
         server.serve_forever()
-
-        log.info("Listening on port %d..." % (portNum))
 
     except OSError:
         log.exception("ERROR creating socket...")
