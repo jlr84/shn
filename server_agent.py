@@ -1,6 +1,7 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
 import logging
+import agent
 
 
 ######################################
@@ -33,17 +34,37 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     log.debug("serverKey: %s" % (serverKey))
 
     # Create XMLRPC Server, based on ipAdd/port received
-    server = SimpleXMLRPCServer((ipAdd, portNum))
+    log.debug("Trying socket now...")
+    foundPort = False
+    loopNumber = 1
+    while not foundPort and loopNumber < 3:
+        try:
+            server = SimpleXMLRPCServer((ipAdd, portNum))
+            foundPort = True
+
+        except OSError:
+            log.debug("Port [%d] already in use." % portNum)
+            # Keep port range between 35000 and 39000
+            if portNum < 39000:
+                portNum = portNum + 1
+            else:
+                portNum = 35000
+                loopNumber = loopNumber + 1
+
+    if loopNumber > 2:
+        log.exception("NO open ports found!!!")
+        raise SystemExit
+
+    # Set global var in agent to portNum used
+    agent.serverPort = portNum
 
     # Create/Wrap server socket with ssl
     try:
-        log.debug("Trying socket now...")
         server.socket = ssl.wrap_socket(server.socket,
                                         certfile=serverCert,
                                         keyfile=serverKey,
                                         do_handshake_on_connect=True,
                                         server_side=True)
-
         # Register available functions
         log.debug("Registering Functions")
         server.register_multicall_functions()
@@ -57,7 +78,6 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         print("Server listening on port %d..." % (portNum))
         server.serve_forever()
 
-    except OSError:
-        log.exception("ERROR creating socket... "
-                      "CERT or KEY FILE not found. "
-                      "QUIT and RESTART CONTROLLRE.")
+    except FileNotFoundError:
+        log.warning("CERT or KEY FILE not found.")
+        log.warning("Verify CERT/KEY Files and try again.")

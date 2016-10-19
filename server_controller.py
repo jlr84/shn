@@ -53,11 +53,11 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     log.debug("serverKey: %s" % (serverKey))
 
     # Create XMLRPC Server, based on ipAdd/port received
-    server = SimpleXMLRPCServer((ipAdd, portNum))
-
-    # Create/Wrap server socket with ssl
     try:
         log.debug("Trying socket now...")
+        server = SimpleXMLRPCServer((ipAdd, portNum))
+
+        # Create/Wrap server socket with ssl
         server.socket = ssl.wrap_socket(server.socket,
                                         certfile=serverCert,
                                         keyfile=serverKey,
@@ -77,7 +77,10 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         print("Server listening on port %d." % (portNum))
         server.serve_forever()
 
-    except OSError:
+    except FileNotFoundError:
         log.exception("ERROR creating socket... "
-                      "CERT or KEY FILE not found. "
-                      "QUIT and RESTART CONTROLLER.")
+                      "CERT or KEY NOT Present.")
+    except OSError:
+        log.exception("ERROR creating socket..."
+                      "Verify port number [Default=35353] is"
+                      "available for controller.")

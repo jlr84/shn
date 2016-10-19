@@ -2,6 +2,7 @@ import xmlrpc.client
 import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
+import sys        # Required for getting command-line arguments
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
 import server_agent as myServer
@@ -14,17 +15,21 @@ fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
 # Adjustable Settings:
-serverPort = 27878                  # Declare what port the server will use
+serverPort = 35353   #27878         # Declare what port the server will use
 hostName = "agent.shn.local"        # Default; VERIFIED when executed.
 rootDomain = "shn.local"            # Default
 certName = "shn.local"              # Default
+cntlServerName = "controller.shn.local"     # Default
+cntlServerPort = 35353                      # Default
+mntrServerName = "monitor.shn.local"        # Default
+mntrServerPort = 45454                      # Default
 
 # Declarations: Do not change
 certPath = "certs/domains/"                 # Path for ip-based ssl cert files
 CACERTFILE = "certs/ca.cert"                # Location of CA Cert
 CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
 KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
-hostIP = "localhost"                # Default; updated when program is executed.
+hostIP = "localhost"                # Default; updated when program is executed
 
 
 # Return ip address of local host where server is running
@@ -120,6 +125,29 @@ def checkStatus():
     log.debug("End of checkStatus fn.")
 
 
+# Establish connection with Controller
+def establishConnection(remoteName, remotePort):
+
+    log.debug("Start of Establish Connection Function...")
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(CACERTFILE)
+
+    myurl = ''.join(['https://', remoteName, ':', str(remotePort)])
+    with xmlrpc.client.ServerProxy(myurl,
+                                   context=myContext) as proxy:
+
+        # Send server my name and port number
+        try:
+            print("3 + 7 is %d" % (proxy.add(3, 7)))
+            print("11 x 9 is: %d" % (proxy.multiply(11, 9)))
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Controller Server FAILED")
+            print("Connection to Controller Server FAILED:\n",
+                  "Is Controller listening? Confirm connection",
+                  "settings and try again.")
+
+
 # Simple test function to ensure communication is working
 def mathTest():
 
@@ -127,7 +155,8 @@ def mathTest():
     myContext = ssl.create_default_context()
     myContext.load_verify_locations(CACERTFILE)
 
-    with xmlrpc.client.ServerProxy("https://controller.shn.local:35353/",
+    myurl = ''.join(['https://', cntlServerName, ':', str(cntlServerPort)])
+    with xmlrpc.client.ServerProxy(myurl,
                                    context=myContext) as proxy:
         try:
             print("3 + 7 is %d" % (proxy.add(3, 7)))
@@ -182,6 +211,29 @@ def myMenu():
 
 # Start of Main
 if __name__ == '__main__':
+
+    # Verify argument provided; if not provided use default,
+    # if too many exit, if provided use provided
+    if len(sys.argv) == 2:
+        log.debug("Using controller hostname: %s" % (sys.argv[1]))
+        print("Using controller hostname: \n%s" % (sys.argv[1]))
+        cntlServerName = sys.argv[1]
+
+    else:
+        print("usage: %s <hostname>" % sys.argv[0])
+        print("Example:\n$ %s controller.shn.local" % sys.argv[0])
+
+        # If too many arguments, exit
+        if len(sys.argv) > 2:
+            log.debug("Too many arguments. Exiting.")
+            sys.exit(1)
+
+        # If zero arguments, use default controller hostname
+        else:
+            log.debug("Using default controller hostname")
+            print("No controller hostname provided.\n",
+                  "Using default setting: %s" % cntlServerName)
+
     log.info("Starting Main [Agent]")
     hostIP = getMyIP()
     verifyHostName = findHostName(hostIP)
@@ -193,12 +245,23 @@ if __name__ == '__main__':
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")
 
+    # If hostname matches 'hostName' above OR controller, then execute;
+    # this is to allow Agent to run on the same localhost as the
+    # controller, mainly for testing purposes
     elif verifyHostName in [hostName, "controller.shn.local"]:
         log.debug("HostName verified.")
 
         # Verify certificates present prior to displaying menu
         log.debug("Verifying certificates.")
         verifyCerts()
+
+        # Start Agent's Listening Server
+        log.debug("Starting agent listening server...")
+        startServer()
+
+        # Connect to Controller to establish connection
+        log.debug("Connecting to Controller %s" % cntlServerName)
+        establishConnection(cntlServerName, cntlServerPort)
 
         # Display Menu [repeatedly] for user
         while True:
