@@ -7,6 +7,7 @@ import time       # Required for sleep call
 import threading  # Required for communication sub-threads
 import server_agent as myServer
 import certs.gencert as gencert
+import config
 import logging
 from logging.config import fileConfig
 
@@ -14,23 +15,11 @@ from logging.config import fileConfig
 fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
-# Adjustable Settings:
-serverPort = 35353   #27878         # Declare what port the server will use
-hostName = "agent.shn.local"        # Default; VERIFIED when executed.
-rootDomain = "shn.local"            # Default
-certName = "shn.local"              # Default
-cntlServerName = "controller.shn.local"     # Default
-cntlServerPort = 35353                      # Default
-mntrServerName = "monitor.shn.local"        # Default
-mntrServerPort = 45454                      # Default
-
-# Declarations: Do not change
-certPath = "certs/domains/"                 # Path for ip-based ssl cert files
-CACERTFILE = "certs/ca.cert"                # Location of CA Cert
-CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
-KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
-hostIP = "localhost"                # Default; updated when program is executed
-
+# Global Variables -- Don't change. [No need to change.]
+CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
+KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
+hostIP = "localhost"                    # Default; updated when executed
+agentServerUp = False
 
 # Return ip address of local host where server is running
 def getMyIP():
@@ -64,14 +53,14 @@ def verifyCerts():
     global KEYFILE
 
     # Determine file path based on current ip address
-    CERTFILE = ''.join([certPath, rootDomain, ".cert"])
-    KEYFILE = ''.join([certPath, rootDomain, ".key"])
+    CERTFILE = ''.join([config.certPath, config.rootDomain, ".cert"])
+    KEYFILE = ''.join([config.certPath, config.rootDomain, ".key"])
     log.debug("CERTFILE: %s" % CERTFILE)
     log.debug("KEYFILE: %s" % KEYFILE)
 
     # If cert or key file not present, create new certs
     if not os.path.isfile(CERTFILE) or not os.path.isfile(KEYFILE):
-        gencert.gencert(rootDomain)
+        gencert.gencert(config.rootDomain)
         log.info("Certfile(s) NOT present; new certs created.")
         print("Certfile(s) NOT present; new certs created.")
 
@@ -90,7 +79,7 @@ def startServer():
     t = threading.Thread(name="AgentDaemon",
                          target=myServer.runServer,
                          args=(hostIP,
-                               serverPort,
+                               config.agntServerPort,
                                CERTFILE,
                                KEYFILE
                                )
@@ -130,7 +119,7 @@ def establishConnection(remoteName, remotePort):
 
     log.debug("Start of Establish Connection Function...")
     myContext = ssl.create_default_context()
-    myContext.load_verify_locations(CACERTFILE)
+    myContext.load_verify_locations(config.CACERTFILE)
 
     myurl = ''.join(['https://', remoteName, ':', str(remotePort)])
     with xmlrpc.client.ServerProxy(myurl,
@@ -153,9 +142,9 @@ def mathTest():
 
     log.debug("Start of Math Test Function...")
     myContext = ssl.create_default_context()
-    myContext.load_verify_locations(CACERTFILE)
+    myContext.load_verify_locations(config.CACERTFILE)
 
-    myurl = ''.join(['https://', cntlServerName, ':', str(cntlServerPort)])
+    myurl = ''.join(['https://', config.ctlrHostName, ':', str(config.ctlrServerPort)])
     with xmlrpc.client.ServerProxy(myurl,
                                    context=myContext) as proxy:
         try:
@@ -217,7 +206,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         log.debug("Using controller hostname: %s" % (sys.argv[1]))
         print("Using controller hostname: \n%s" % (sys.argv[1]))
-        cntlServerName = sys.argv[1]
+        config.ctlrHostName = sys.argv[1]
 
     else:
         print("usage: %s <hostname>" % sys.argv[0])
@@ -232,7 +221,7 @@ if __name__ == '__main__':
         else:
             log.debug("Using default controller hostname")
             print("No controller hostname provided.\n",
-                  "Using default setting: %s" % cntlServerName)
+                  "Using default setting: %s" % config.ctlrHostName)
 
     log.info("Starting Main [Agent]")
     hostIP = getMyIP()
@@ -245,10 +234,10 @@ if __name__ == '__main__':
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")
 
-    # If hostname matches 'hostName' above OR controller, then execute;
+    # If hostname matches 'config.agntHostName' OR controller, then execute;
     # this is to allow Agent to run on the same localhost as the
     # controller, mainly for testing purposes
-    elif verifyHostName in [hostName, "controller.shn.local"]:
+    elif verifyHostName in [config.agntHostName, "controller.shn.local"]:
         log.debug("HostName verified.")
 
         # Verify certificates present prior to displaying menu
@@ -258,10 +247,16 @@ if __name__ == '__main__':
         # Start Agent's Listening Server
         log.debug("Starting agent listening server...")
         startServer()
+        while not config.agentServerUp:
+            time.sleep(1)
+            log.debug("Waiting for Agent Server to Start")
+            log.debug("Agent Port: %d" % config.agntServerPort)
+        log.debug("[Main] Agent server listening"
+                  " on port %d." % config.agntServerPort)
 
         # Connect to Controller to establish connection
-        log.debug("Connecting to Controller %s" % cntlServerName)
-        establishConnection(cntlServerName, cntlServerPort)
+        log.debug("Connecting to Controller %s" % config.ctlrHostName)
+        establishConnection(config.ctlrHostName, config.ctlrServerPort)
 
         # Display Menu [repeatedly] for user
         while True:
@@ -270,5 +265,5 @@ if __name__ == '__main__':
 
     else:
         log.error("Hostname incorrect. "
-                  "Hostname Found: %s; "
-                  "Hostname Required: %s." % (verifyHostName, hostName))
+                  "Hostname Found: %s; Hostname "
+                  "Required: %s." % (verifyHostName, config.agntHostName))

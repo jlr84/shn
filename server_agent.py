@@ -1,7 +1,7 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
 import logging
-import agent
+import config
 
 
 ######################################
@@ -37,10 +37,12 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     log.debug("Trying socket now...")
     foundPort = False
     loopNumber = 1
+    config.AgentServerUp = False
     while not foundPort and loopNumber < 3:
         try:
             server = SimpleXMLRPCServer((ipAdd, portNum))
             foundPort = True
+            config.agentServerUp = True
 
         except OSError:
             log.debug("Port [%d] already in use." % portNum)
@@ -56,7 +58,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         raise SystemExit
 
     # Set global var in agent to portNum used
-    agent.serverPort = portNum
+    config.agntServerPort = portNum
 
     # Create/Wrap server socket with ssl
     try:

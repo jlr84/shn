@@ -53,8 +53,8 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
     log.debug("serverKey: %s" % (serverKey))
 
     # Create XMLRPC Server, based on ipAdd/port received
+    log.debug("Trying socket now...")
     try:
-        log.debug("Trying socket now...")
         server = SimpleXMLRPCServer((ipAdd, portNum))
 
         # Create/Wrap server socket with ssl
@@ -82,5 +82,5 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
                       "CERT or KEY NOT Present.")
     except OSError:
         log.exception("ERROR creating socket..."
-                      "Verify port number [Default=35353] is"
-                      "available for controller.")
+                      "Verify port number [%d] is "
+                      "available for controller." % portNum)

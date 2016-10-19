@@ -6,6 +6,7 @@ import time       # Required for sleep call
 import threading  # Required for communication sub-threads
 import server_controller as myServer
 import certs.gencert as gencert
+import config
 import logging
 from logging.config import fileConfig
 
@@ -13,18 +14,11 @@ from logging.config import fileConfig
 fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
-# Adjustable Settings:
-serverPort = 35353                  # Declare what port the server will use
-hostName = "controller.shn.local"   # Default; VERIFIED when executed.
-rootDomain = "shn.local"            # Default
-certName = "shn.local"              # Default
 
-# Declarations: Do not change
-certPath = "certs/domains/"                 # Path for ip-based ssl cert files
-CACERTFILE = "certs/ca.cert"                # Location of CA Cert
-CERTFILE = "certs/domains/localhost.cert"   # Default; updated when executed
-KEYFILE = "certs/domains/localhost.key"     # Default; updated when executed
-hostIP = "localhost"                # Default; updated when program is executed.
+# Global Variables -- Don't change. [No need to change.]
+CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
+KEYFILE = "certs/domains/local.key"     # Default; updated when executed
+hostIP = "localhost"                    # Default; updated when executed
 
 
 # Return ip address of local host where server is running
@@ -59,14 +53,14 @@ def verifyCerts():
     global KEYFILE
 
     # Determine file path based on current ip address
-    CERTFILE = ''.join([certPath, rootDomain, ".cert"])
-    KEYFILE = ''.join([certPath, rootDomain, ".key"])
+    CERTFILE = ''.join([config.certPath, config.rootDomain, ".cert"])
+    KEYFILE = ''.join([config.certPath, config.rootDomain, ".key"])
     log.debug("CERTFILE: %s" % (CERTFILE))
     log.debug("KEYFILE: %s" % (KEYFILE))
 
     # If cert or key file not present, create new certs
     if not os.path.isfile(CERTFILE) or not os.path.isfile(KEYFILE):
-        gencert.gencert(rootDomain)
+        gencert.gencert(config.rootDomain)
         log.info("Certfile(s) NOT present; new certs created.")
         print("Certfile(s) NOT present; new certs created.")
 
@@ -85,7 +79,7 @@ def startServer():
     t = threading.Thread(name="ServerDaemon",
                          target=myServer.runServer,
                          args=(hostIP,
-                               serverPort,
+                               config.ctlrServerPort,
                                CERTFILE,
                                KEYFILE
                                )
@@ -127,7 +121,7 @@ def controlAgent(hostName, portNum):
     print("ControlAgent Daemon Started")
     # Connect to Agent's server daemon
     myContext = ssl.create_default_context()
-    myContext.load_verify_locations(CACERTFILE)
+    myContext.load_verify_locations(config.CACERTFILE)
 
     thisHost = ''.join(['https://', hostName, ':', str(portNum)])
 
@@ -224,7 +218,7 @@ if __name__ == '__main__':
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")
 
-    elif verifyHostName == hostName:
+    elif verifyHostName == config.ctlrHostName:
         log.debug("HostName verified.")
 
         log.debug("Verifying certificates.")
@@ -238,5 +232,5 @@ if __name__ == '__main__':
 
     else:
         log.error("Hostname incorrect. "
-                  "Hostname Found: %s; "
-                  "Hostname Required: %s." % (verifyHostName, hostName))
+                  "Hostname Found: %s; Hostname "
+                  "Required: %s." % (verifyHostName, config.ctlrHostName))
