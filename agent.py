@@ -69,7 +69,6 @@ def verifyCerts():
         gencert.gencert(rootDomain)
         log.info("Certfile(s) NOT present; new certs created.")
         print("Certfile(s) NOT present; new certs created.")
-        print("Note: You may need to quit & restart Agent.")
 
     else:
         log.info("Certfiles Verified Present")

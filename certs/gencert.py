@@ -42,7 +42,8 @@ import sys
 import hashlib
 import subprocess
 import datetime
-import time
+import logging
+
 
 OPENSSL_CONFIG_TEMPLATE = """
 prompt = no
@@ -87,7 +88,12 @@ def openssl(*args):
 
 def gencert(domain, rootdir=MYDIR, keysize=KEY_SIZE, days=DAYS,
             ca_cert=CA_CERT, ca_key=CA_KEY):
-    print("MYDIR: \n%s\n" % MYDIR)
+
+    log = logging.getLogger(__name__)
+    cwd = os.getcwd()
+    log.debug("CWD: %s" % cwd)
+    log.debug("MYDIR: %s" % MYDIR)
+
     def dfile(ext):
         return os.path.join('domains', '%s.%s' % (domain, ext))
 
@@ -116,8 +122,10 @@ def gencert(domain, rootdir=MYDIR, keysize=KEY_SIZE, days=DAYS,
             '-extensions', 'v3_req', '-extfile', dfile('config'),
             *X509_EXTRA_ARGS)
 
-    print ("Done.\n  The private key is at %s" % (dfile('key')))
-    print("  The cert is at %s" % (dfile('cert')))
+    os.chdir(cwd)
+    log.info("Done: New Certs Created.")
+    log.info("The private key is at %s" % (dfile('key')))
+    log.info("The cert is at %s" % (dfile('cert')))
 
 
 if __name__ == "__main__":
@@ -125,4 +133,3 @@ if __name__ == "__main__":
         print ("usage: %s <domain-name>" % sys.argv[0])
         sys.exit(1)
     gencert(sys.argv[1])
-    time.sleep(30)
