@@ -15,11 +15,14 @@ from logging.config import fileConfig
 fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
+# ALIAS for this Agent; change as needed
+AGENT_ALIAS = "My Identifier 1"
+
 # Global Variables -- Don't change. [No need to change.]
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
-agentServerUp = False
+
 
 # Return ip address of local host where server is running
 def getMyIP():
@@ -127,6 +130,10 @@ def establishConnection(remoteName, remotePort):
 
         # Send server my name and port number
         try:
+            print("Register with controller:",
+                  "%s" % (proxy.registerAgent(config.agntHostName,
+                                              config.agntServerPort,
+                                              AGENT_ALIAS)))
             print("3 + 7 is %d" % (proxy.add(3, 7)))
             print("11 x 9 is: %d" % (proxy.multiply(11, 9)))
 
@@ -144,7 +151,8 @@ def mathTest():
     myContext = ssl.create_default_context()
     myContext.load_verify_locations(config.CACERTFILE)
 
-    myurl = ''.join(['https://', config.ctlrHostName, ':', str(config.ctlrServerPort)])
+    myurl = ''.join(['https://', config.ctlrHostName, ':',
+                     str(config.ctlrServerPort)])
     with xmlrpc.client.ServerProxy(myurl,
                                    context=myContext) as proxy:
         try:

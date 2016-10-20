@@ -3,7 +3,8 @@ import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
 import time       # Required for sleep call
-import threading  # Required for communication sub-threads
+import threading  # Required for communication sub-threadsi
+import pymysql
 import server_controller as myServer
 import certs.gencert as gencert
 import config
@@ -114,37 +115,7 @@ def checkStatus():
     log.debug("End of checkStatus fn.")
 
 
-# Main Logic for Controller communicating to Agent(s)
-def controlAgent(hostName, portNum):
 
-    log.debug("Start of controlAgent Function...")
-    print("ControlAgent Daemon Started")
-    # Connect to Agent's server daemon
-    myContext = ssl.create_default_context()
-    myContext.load_verify_locations(config.CACERTFILE)
-
-    thisHost = ''.join(['https://', hostName, ':', str(portNum)])
-
-    with xmlrpc.client.ServerProxy(thisHost,
-                                   context=myContext) as proxy:
-
-        try:
-            print("4 + 34 is %d" % (proxy.add(4, 34)))
-            print("33 x 3 is %d" % (proxy.multiply(33, 3)))
-
-        except ConnectionRefusedError:
-            log.warning("Connection to Agent FAILED")
-            print("Connection to Agent FAILED:")
-            print("Is Agent listening? Confirm and try again.")
-
-    # Run check on system status
-
-    # Send Command to Agent
-
-    log.info("Entering 'while True' loop now.")
-    while True:
-        log.info("ControlAgent: Sleeping 30...")
-        time.sleep(30)
 
 
 # Start a thread child to run control agent as daemon
@@ -218,7 +189,7 @@ if __name__ == '__main__':
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")
 
-    elif verifyHostName == config.ctlrHostName:
+    elif verifyHostName in [config.ctlrHostName, config.mntrHostName]:
         log.debug("HostName verified.")
 
         log.debug("Verifying certificates.")

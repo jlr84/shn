@@ -5,6 +5,69 @@ import threading
 import logging
 
 
+# Main Logic for Controller communicating to Agent(s)
+def controlAgent(host, port, agtAlias):
+    log = logging.getLogger(__name__)
+    log.debug("Start of controlAgent Function...")
+    print("ControlAgent Daemon Started")
+
+    # Connect to database to register agent
+    log.debug("Connecting to database")
+    db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
+                         user=config.ctlrMysqlUser, passwd=config.ctlrMysqlPwd,
+                         db=config.ctlrdb)
+    cursor = db.cursor()
+
+    sql = "INSERT INTO agents(timestamp, \
+           host, port, alias) \
+           VALUES (now(), '%s', %d, '%s')" % \
+        (host, port, agtAlias)
+
+    log.debug("SQL Query Made [shown as follows]:")
+    log.debug(sql)
+
+    try:
+        # Execute the SQL command
+        cursor.execute(sql)
+        # Commit changes in the database
+        db.commit()
+        log.debug("SQL INSERT Successful")
+    except:
+        # Rollback in case there is any error
+        db.rollback()
+        log.exception("SQL INSERT FAILED!!")
+
+    # Disconnect from database
+    db.close()
+
+    # Connect to Agent's server daemon
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            print("4 + 34 is %d" % (proxy.add(4, 34)))
+            print("33 x 3 is %d" % (proxy.multiply(33, 3)))
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+    # Run check on system status
+
+    # Send Command to Agent
+
+    log.info("Entering 'while True' loop now.")
+    while True:
+        log.info("ControlAgent: Sleeping 30...")
+        time.sleep(30)
+
+
 ######################################
 # Define functions available to server
 ######################################
@@ -24,22 +87,27 @@ def divide(x, y):
     return x/y
 
 
-def connectToServer(hostName, portNum):
+def registerAgent(agentHostName, agentPortNum, agentAlias):
+    log = logging.getLogger(__name__)
+    log.info("Starting registerAgent function")
 
     # Start child process to run function for
-    #  communicating with Agent
-    tName = ''.join(["Server-", hostName])
+    #  registering and eommunicating with Agent
+    tName = ''.join(["Server-", agentHostName])
     t = threading.Thread(name=tName,
                          target=controller.controlAgent,
-                         args=(hostName,
-                               portNum
+                         args=(agentHostName,
+                               agentPortNum,
+                               agentAlias
                                )
                          )
     t.daemon = True
     t.start()
 
     # Connect to Agent running at hostName, listening on portNum
-    return "Connecting"
+    mymsg = ''.join(["Registering Agent '", agentHostName, "'..."])
+    log.debug(mymsg)
+    return mymsg
 
 
 #########################################
@@ -70,7 +138,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(subtract, 'subtract')
         server.register_function(multiply, 'multiply')
         server.register_function(divide, 'divide')
-        server.register_function(connectToServer, 'connectToServer')
+        server.register_function(registerAgent, 'registerAgent')
 
         # Start server listening [forever]
         log.info("Server listening on port %d." % (portNum))
