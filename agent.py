@@ -184,7 +184,8 @@ def menu():
     print("1) Start AGENT Server")
     print("2) Check Status")
     print("3) Verify Certs")
-    print("4) Math Test")
+    print("4) Re-establish Connection with Controller")
+    print("9) Connection Test [Simple Math Test]")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
 
@@ -199,8 +200,10 @@ def myMenu():
     elif choice == "3":
         verifyCerts()
     elif choice == "4":
+        establishConnection(config.ctlrHostName, config.ctlrServerPort)
+    elif choice == "9":
         mathTest()
-    elif choice == "q":
+    elif choice in ["q", ":q"]:
         myQuit()
     else:
         invalid(choice)

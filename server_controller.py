@@ -1,11 +1,16 @@
 from xmlrpc.server import SimpleXMLRPCServer
 import ssl
-import controller
 import threading
 import logging
+import pymysql
+import config
+import xmlrpc.client
+import time
 
 
+#####################################################
 # Main Logic for Controller communicating to Agent(s)
+#####################################################
 def controlAgent(host, port, agtAlias):
     log = logging.getLogger(__name__)
     log.debug("Start of controlAgent Function...")
@@ -18,9 +23,9 @@ def controlAgent(host, port, agtAlias):
                          db=config.ctlrdb)
     cursor = db.cursor()
 
-    sql = "INSERT INTO agents(timestamp, \
-           host, port, alias) \
-           VALUES (now(), '%s', %d, '%s')" % \
+    sql = "INSERT INTO agents(timestamp, "\
+          "host, port, alias) "\
+          "VALUES (now(), '%s', %d, '%s')" % \
         (host, port, agtAlias)
 
     log.debug("SQL Query Made [shown as follows]:")
@@ -68,9 +73,9 @@ def controlAgent(host, port, agtAlias):
         time.sleep(30)
 
 
-######################################
-# Define functions available to server
-######################################
+#############################################################
+# Define functions available to server via remote connections
+#############################################################
 def add(x, y):
     return x+y
 
@@ -95,7 +100,7 @@ def registerAgent(agentHostName, agentPortNum, agentAlias):
     #  registering and eommunicating with Agent
     tName = ''.join(["Server-", agentHostName])
     t = threading.Thread(name=tName,
-                         target=controller.controlAgent,
+                         target=controlAgent,
                          args=(agentHostName,
                                agentPortNum,
                                agentAlias

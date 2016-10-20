@@ -4,7 +4,6 @@ import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
 import time       # Required for sleep call
 import threading  # Required for communication sub-threadsi
-import pymysql
 import server_controller as myServer
 import certs.gencert as gencert
 import config
@@ -115,9 +114,6 @@ def checkStatus():
     log.debug("End of checkStatus fn.")
 
 
-
-
-
 # Start a thread child to run control agent as daemon
 def startControlAgent(hostName, portNum):
 
@@ -126,14 +122,37 @@ def startControlAgent(hostName, portNum):
     # Now, start thread
     log.debug("Starting new thread...")
     t = threading.Thread(name="ControlAgent",
-                         target=controlAgent,
+                         target=myServer.controlAgent,
                          args=(hostName,
-                               portNum
+                               portNum,
+                               "SELF TEST"
                                )
                          )
     t.daemon = True
     t.start()
     log.debug("Thread started; end of startControlAgent fn.")
+
+
+# Simple test function to ensure communication is working
+def mathTest():
+
+    log.debug("Start of Math Test Function...")
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    myurl = ''.join(['https://', config.agntHostName, ':',
+                     str(config.agntServerPort)])
+    with xmlrpc.client.ServerProxy(myurl,
+                                   context=myContext) as proxy:
+        try:
+            print("5 + 9 is %d" % (proxy.add(5, 9)))
+            print("21 x 3 is: %d" % (proxy.multiply(21, 3)))
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent Server FAILED")
+            print("Connection to Agent Server FAILED:\n",
+                  "Is Agent listening? Confirm connection",
+                  "settings and try again.")
 
 
 # Quit gracefully after terminting all child processes
@@ -155,6 +174,7 @@ def menu():
     print("2) Check Status")
     print("3) Verify Certs")
     print("4) Control Agent")
+    print("9) Connection Test [Simple Math Test]")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
 
@@ -169,7 +189,9 @@ def myMenu():
     elif choice == "3":
         verifyCerts()
     elif choice == "4":
-        startControlAgent("controller.shn.local", 27878)
+        startControlAgent("controller.shn.local", 38000)
+    elif choice == "9":
+        mathTest()
     elif choice == "q":
         myQuit()
     else:
