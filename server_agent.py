@@ -23,6 +23,19 @@ def divide(x, y):
     return x/y
 
 
+def failed(name):
+    log = logging.getLogger(__name__)
+    log.debug("Agent registration with %s FAILED." % name)
+    return "Failed registration acknowledged."
+
+
+def confirm(name, idnum, time):
+    log = logging.getLogger(__name__)
+    log.debug("Agent Registered to "
+              "%s [Conf# %d] at %s." % (name, idnum, time))
+    return "Conf# %d Acknowledged." % (idnum)
+
+
 #########################################
 # Main server function: An xml rpc server
 # for responding to client requests.
@@ -74,6 +87,8 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(subtract, 'subtract')
         server.register_function(multiply, 'multiply')
         server.register_function(divide, 'divide')
+        server.register_function(confirm, 'confirm')
+        server.register_function(failed, 'failed')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))

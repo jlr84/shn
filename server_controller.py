@@ -23,6 +23,7 @@ def controlAgent(host, port, agtAlias):
                          db=config.ctlrdb)
     cursor = db.cursor()
 
+    # Query to register agent
     sql = "INSERT INTO agents(timestamp, "\
           "host, port, alias) "\
           "VALUES (now(), '%s', %d, '%s')" % \
@@ -31,6 +32,7 @@ def controlAgent(host, port, agtAlias):
     log.debug("SQL Query Made [shown as follows]:")
     log.debug(sql)
 
+    # Register Agent in database
     try:
         # Execute the SQL command
         cursor.execute(sql)
@@ -42,10 +44,34 @@ def controlAgent(host, port, agtAlias):
         db.rollback()
         log.exception("SQL INSERT FAILED!!")
 
+    # Query to retrieve id/time of registration
+    sql = "SELECT id, timestamp, host, port "\
+          "FROM agents WHERE (host, port) = "\
+          "('%s', %d) ORDER BY id DESC LIMIT 1" % \
+        (host, port)
+
+    success = False
+
+    # Get id/time of registration
+    try:
+        # Execute the SQL command
+        cursor.execute(sql)
+        # Fetch all the rows in a list of lists
+        results = cursor.fetchall()
+        for row in results:
+            thisID = row[0]
+            thisTime = row[1]
+        success = True
+        log.debug("ID/TIME Recorded as: %d, %s" % (thisID, thisTime))
+
+    except:
+        log.exception("ERROR in db query>> %s" % sql)
+
     # Disconnect from database
     db.close()
 
-    # Connect to Agent's server daemon
+    # Connect to Agent's server daemon to confirm
+    # registration
     myContext = ssl.create_default_context()
     myContext.load_verify_locations(config.CACERTFILE)
 
@@ -55,7 +81,18 @@ def controlAgent(host, port, agtAlias):
                                    context=myContext) as proxy:
 
         try:
-            print("4 + 34 is %d" % (proxy.add(4, 34)))
+            log.info("Sending Confirmation...")
+            print("Sending Confirmation...")
+            if success:
+                log.debug("Sending SUCCESS. [success==True]")
+                response = proxy.confirm(config.ctlrHostName,
+                                         thisID, thisTime)
+            else:
+                log.debug("Sending FAILURE. [success==False]")
+                response = proxy.failed(config.ctlrHostName)
+
+            log.info(response)
+            print("%s" % response)
             print("33 x 3 is %d" % (proxy.multiply(33, 3)))
 
         except ConnectionRefusedError:
