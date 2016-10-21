@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Default; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
+admin_selected = False
 
 
 # Return ip address of local host where server is running
@@ -133,6 +134,20 @@ def startControlAgent(hostName, portNum):
     log.debug("Thread started; end of startControlAgent fn.")
 
 
+# Display Agents currently connected
+def displayAgents():
+    log.debug("Displaying agents now")
+    # TODO Finish this
+    print("TODO: Display Agents")
+
+
+# Send command to Agent manually
+def sendCommand():
+    log.debug("Send Command to Agent -- Menu.")
+    # TODO Finish this
+    print("TODO: Provide options of commands to send...")
+
+
 # Simple test function to ensure communication is working
 def mathTest():
 
@@ -162,38 +177,92 @@ def myQuit():
     raise SystemExit
 
 
+# Stop Controller Server
+def stopServer():
+    log.debug("Stopping Controller Server.")
+    # TODO Determine if it is possible to stop a daemon thread
+    # without stopping the whole program; for now, this just
+    # ends the entire program
+    print("Controller Server Stopping.")
+    myQuit()
+
+
 def invalid(choice):
     log.debug("Invalid choice: %s" % choice)
     print("INVALID CHOICE!")
 
 
+def adminMenu():
+    log.debug("Displaying admin menu")
+    print("Admin Menu:")
+    print("a) Connection Test (simple math test)")
+    print("b) SSL Verification (verify certificates")
+    print("c) STOP Controller Server (program will exit)")
+    print("d) START* Controller Server (only if not running already)")
+    print("e) TEST register/control Agent (using Agent default settings)")
+    print("9) BACK (return to 'Menu')")
+    return input("Make a Choice\n>>> ")
+
+
+def adminSelection():
+    global admin_selected
+    adminChoice = adminMenu()
+    if adminChoice == "a":
+        mathTest()
+    elif adminChoice == "b":
+        verifyCerts()
+    elif adminChoice == "c":
+        stopServer()
+    elif adminChoice == "d":
+        startServer()
+    elif adminChoice == "e":
+        startControlAgent("agent.shn.local", 38000)
+    elif adminChoice == "9":
+        log.debug("Admin is De-selected")
+        print("Back to Main Menu...")
+        admin_selected = False
+    elif adminChoice == "r":
+        # Refresh Menu (do nothing)
+        log.info("Refreshing Menu")
+    elif adminChoice in ["q", ":q"]:
+        myQuit()
+    else:
+        invalid(adminChoice)
+
+
 def menu():
     log.debug("Displaying menu")
     print("\nMENU:")
-    print("1) Start CONTROLLER Server")
-    print("2) Check Status")
-    print("3) Verify Certs")
-    print("4) Control Agent")
-    print("9) Connection Test [Simple Math Test]")
+    print("1) Check CONTROLLER server status")
+    print("2) Display Connected Agents")
+    print("3) Send Command to Agent")
+    print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
 
 
 def myMenu():
+    global admin_selected
     choice = 0
-    choice = menu()
+    if admin_selected:
+        choice = "9"
+    else:
+        choice = menu()
     if choice == "1":
-        startServer()
-    elif choice == "2":
         checkStatus()
+    elif choice == "2":
+        displayAgents()
     elif choice == "3":
-        verifyCerts()
-    elif choice == "4":
-        startControlAgent("controller.shn.local", 38000)
+        sendCommand()
     elif choice == "9":
-        mathTest()
-    elif choice == "q":
+        admin_selected = True
+        log.debug("Admin is Selected")
+        adminSelection()
+    elif choice in ["q", ":q"]:
         myQuit()
+    elif choice == "r":
+        # Refresh Menu (do nothing)
+        log.info("Refreshing Menu")
     else:
         invalid(choice)
 
@@ -218,10 +287,13 @@ if __name__ == '__main__':
         # Verify certificates present prior to displaying menu
         verifyCerts()
 
+        # Starting Server
+        startServer()
+
         # Display Menu [repeatedly] for user
         while True:
             myMenu()
-            time.sleep(3)
+            time.sleep(1)
 
     else:
         log.error("Hostname incorrect. "

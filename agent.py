@@ -22,6 +22,7 @@ AGENT_ALIAS = "My Identifier 1"
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
+admin_selected = False
 
 
 # Return ip address of local host where server is running
@@ -72,49 +73,42 @@ def verifyCerts():
         print("Certfiles Verified Present")
 
 
-# Start a thread child to run server connection as a daemon
-def startServer():
-
-    log.info("Starting Server...")
-
-    # Now, start thread
-    log.debug("Starting new thread...")
-    t = threading.Thread(name="AgentDaemon",
-                         target=myServer.runServer,
-                         args=(hostIP,
-                               config.agntServerPort,
-                               CERTFILE,
-                               KEYFILE
-                               )
-                         )
-    t.daemon = True
-    t.start()
-    log.debug("Thread started; end of startServer fn.")
-
-
 # Check and Display the status of all child processes
-def checkStatus():
-    log.debug("Checking Status of Threads...")
+def checkServer(do_not_print=False):
+    log.debug("Checking Status of Agent Server Thread(s)...")
     totalThreads = threading.active_count()
     subThreads = totalThreads - 1
-    print("\nSub-Thread(s): %d" % (subThreads))
+
+    if do_not_print:
+        log.debug("Total Agent Server(s): %d" % (subThreads))
+    else:
+        print("\nTotal Agent Server(s): %d" % (subThreads))
 
     main_thread = threading.currentThread()
     k = 1
     for t in threading.enumerate():
         if t is main_thread:
             continue
-        print("Thread #%d:" % (k))
-        print("Name: %s" % (t.name))
-        print("Ident: %d" % (t.ident))
+        if do_not_print:
+            log.debug("Thread #%d:" % (k))
+            log.debug("Name: %s" % (t.name))
+            log.debug("Ident: %d" % (t.ident))
+        else:
+            print("Thread #%d:" % (k))
+            print("Name: %s" % (t.name))
+            print("Ident: %d" % (t.ident))
         ans = "unknown"
         if t.is_alive():
             ans = "YES"
         else:
             ans = "NO"
-        print("Alive? %s\n" % (ans))
-        k = k+1
-    log.debug("End of checkStatus fn.")
+        if do_not_print:
+            log.debug("Alive? %s" % (ans))
+        else:
+            print("Alive? %s\n" % (ans))
+        k = k + 1
+    log.debug("End of checkServer fn.")
+    return subThreads
 
 
 # Establish connection with Controller
@@ -134,14 +128,79 @@ def establishConnection(remoteName, remotePort):
                   "%s" % (proxy.registerAgent(config.agntHostName,
                                               config.agntServerPort,
                                               AGENT_ALIAS)))
-            print("3 + 7 is %d" % (proxy.add(3, 7)))
-            print("11 x 9 is: %d" % (proxy.multiply(11, 9)))
 
         except ConnectionRefusedError:
             log.warning("Connection to Controller Server FAILED")
             print("Connection to Controller Server FAILED:\n",
                   "Is Controller listening? Confirm connection",
                   "settings and try again.")
+
+
+# Start a thread child to run server connection as a daemon
+def startServer():
+
+    log.info("Attempting to start server on "
+             "Port# %d..." % (config.agntServerPort))
+    startConfirmation = "y"     # Default = 'yes'
+    config.agentServerUp = False
+
+    # Check to see if any Agent Servers are already running
+    log.debug("Checking server(s) already running.")
+    alreadyRunning = checkServer(True)
+
+    # If server already running, prompt user for confirmation
+    # before starting an additional server
+    if alreadyRunning > 0:
+        log.debug("Warning: %d Agent Servers already running" % alreadyRunning)
+    if alreadyRunning == 1:
+        print("WARNING: 1 Agent Server Already Running!")
+    elif alreadyRunning > 1:
+        print("WARNING: %d Agent Servers Already Running!" % alreadyRunning)
+
+    if alreadyRunning > 0:
+        print("Confirm you want to start an ADDITIONAL Agent",
+              "server.")
+        startConfirmation = input("Confirm YES['y'] or NO['n']:\n>>>")
+
+    if startConfirmation in ["y", "Y", "YES", "yes", "Yes"]:
+        # Now, start thread
+        log.debug("Starting new thread...")
+        t = threading.Thread(name="AgentDaemon",
+                             target=myServer.runServer,
+                             args=(hostIP,
+                                   config.agntServerPort,
+                                   CERTFILE,
+                                   KEYFILE
+                                   )
+                             )
+        t.daemon = True
+        t.start()
+        log.debug("Thread started... waiting for server to come up.")
+
+        while not config.agentServerUp:
+            time.sleep(1)
+            log.debug("Waiting for Agent Server to Start")
+            log.debug("Agent Port: %d" % config.agntServerPort)
+        log.debug("New Agent server listening"
+                  " on port %d." % config.agntServerPort)
+
+        # Connect to Controller to establish connection
+        log.debug("Connecting to Controller %s" % config.ctlrHostName)
+        establishConnection(config.ctlrHostName, config.ctlrServerPort)
+
+    elif startConfirmation in ["n", "N", "NO", "no", "No"]:
+        print("'NO' Selected: Aborting.")
+        log.debug("'%s' selected. Aborting server start" % startConfirmation)
+    else:
+        invalid(startConfirmation)
+        print("Aborting server start")
+
+
+# View current external connections
+def viewConnections(admin=False):
+    log.debug("Checking Status of Agent Connection(s)...")
+    # TODO Finish this
+    print("TODO: View Agent's External Connections")
 
 
 # Simple test function to ensure communication is working
@@ -176,38 +235,89 @@ def myQuit():
     raise SystemExit
 
 
+# Stop Agent Server
+def stopServer():
+    log.debug("Stopping Agent Server.")
+    # TODO Determine if it is possible to stop a daemon thread
+    # without stopping the whole program; for now, this just
+    # ends the entire program
+    print("Agent Server Stopping.")
+    myQuit()
+
+
 def invalid(choice):
     log.debug("Invalid choice: %s" % choice)
     print("INVALID CHOICE!")
 
 
+def adminMenu():
+    log.debug("Displaying admin menu")
+    print("Admin Menu:")
+    print("a) Connection Test (simple math test)")
+    print("b) SSL Verification (verify certificates")
+    print("c) STOP Agent Server (program will exit)")
+    print("d) START* Agent Server (*start/re-start/start additional)")
+    print("e) Re-Register with Controller")
+    print("9) BACK (return to 'Menu')")
+    return input("Make a Choice\n>>> ")
+
+
+def adminSelection():
+    global admin_selected
+    adminChoice = adminMenu()
+    if adminChoice == "a":
+        mathTest()
+    elif adminChoice == "b":
+        verifyCerts()
+    elif adminChoice == "c":
+        stopServer()
+    elif adminChoice == "d":
+        startServer()
+    elif adminChoice == "e":
+        establishConnection(config.ctlrHostName, config.ctlrServerPort)
+    elif adminChoice == "9":
+        log.debug("Admin is De-selected")
+        print("Back to Main Menu...")
+        admin_selected = False
+    elif adminChoice == "r":
+        # Refresh Menu (do nothing)
+        log.info("Refreshing Menu")
+    elif adminChoice in ["q", ":q"]:
+        myQuit()
+    else:
+        invalid(adminChoice)
+
+
 def menu():
     log.debug("Displaying menu")
     print("MENU:")
-    print("1) Start AGENT Server")
-    print("2) Check Status")
-    print("3) Verify Certs")
-    print("4) Re-establish Connection with Controller")
-    print("9) Connection Test [Simple Math Test]")
+    print("1) Check AGENT server status")
+    print("2) View External Connections")
+    print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
 
 
 def myMenu():
+    global admin_selected
     choice = 0
-    choice = menu()
+    if admin_selected:
+        choice = "9"
+    else:
+        choice = menu()
     if choice == "1":
-        startServer()
+        checkServer()
     elif choice == "2":
-        checkStatus()
-    elif choice == "3":
-        verifyCerts()
-    elif choice == "4":
-        establishConnection(config.ctlrHostName, config.ctlrServerPort)
+        viewConnections()
     elif choice == "9":
-        mathTest()
+        admin_selected = True
+        log.debug("Admin is Selected")
+        adminSelection()
     elif choice in ["q", ":q"]:
         myQuit()
+    elif choice == "r":
+        # Refresh Menu (do nothing)
+        log.info("Refreshing Menu")
     else:
         invalid(choice)
 
@@ -261,21 +371,11 @@ if __name__ == '__main__':
         # Start Agent's Listening Server
         log.debug("Starting agent listening server...")
         startServer()
-        while not config.agentServerUp:
-            time.sleep(1)
-            log.debug("Waiting for Agent Server to Start")
-            log.debug("Agent Port: %d" % config.agntServerPort)
-        log.debug("[Main] Agent server listening"
-                  " on port %d." % config.agntServerPort)
-
-        # Connect to Controller to establish connection
-        log.debug("Connecting to Controller %s" % config.ctlrHostName)
-        establishConnection(config.ctlrHostName, config.ctlrServerPort)
 
         # Display Menu [repeatedly] for user
         while True:
             myMenu()
-            time.sleep(3)
+            time.sleep(1)
 
     else:
         log.error("Hostname incorrect. "
