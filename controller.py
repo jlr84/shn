@@ -170,7 +170,7 @@ def displayAgents():
 
     # Query to retrieve each host's data
     for k in range(len(hosts)):
-        sql = "SELECT host, port, timestamp, id FROM "\
+        sql = "SELECT host, port, timestamp, alias, id FROM "\
               "agents where host = '%s' ORDER BY id "\
               "DESC LIMIT 1" % (hosts[k])
 
@@ -185,8 +185,10 @@ def displayAgents():
                 thisHost = row[0]
                 thisPort = row[1]
                 thisTime = row[2]
-                thisID = row[3]
+                thisAlias = row[3]
+                thisID = row[4]
             print("Host: %s" % thisHost)
+            print("Alias: %s" % thisAlias)
             print("Port: %s" % thisPort)
             print("Time Connected: %s" % thisTime)
             print("ID Number: %s\n" % thisID)

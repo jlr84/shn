@@ -95,8 +95,6 @@ def controlAgent(host, port, agtAlias):
                 response = proxy.failed(config.ctlrHostName)
                 log.info(response)
 
-            print("33 x 3 is %d" % (proxy.multiply(33, 3)))
-
         except ConnectionRefusedError:
             log.warning("Connection to Agent FAILED")
             print("Connection to Agent FAILED:")
@@ -153,16 +151,8 @@ def add(x, y):
     return x+y
 
 
-def subtract(x, y):
-    return x-y
-
-
 def multiply(x, y):
     return x*y
-
-
-def divide(x, y):
-    return x/y
 
 
 # Disconnect Agent from controller
@@ -275,9 +265,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         log.debug("Registering Functions")
         server.register_multicall_functions()
         server.register_function(add, 'add')
-        server.register_function(subtract, 'subtract')
         server.register_function(multiply, 'multiply')
-        server.register_function(divide, 'divide')
         server.register_function(disconnectAgent, 'disconnectAgent')
         server.register_function(registerAgent, 'registerAgent')
 
