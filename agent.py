@@ -5,6 +5,7 @@ import os         # Required for Forking/child processes
 import sys        # Required for getting command-line arguments
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
+import dbm
 import server_agent as myServer
 import certs.gencert as gencert
 import config
@@ -199,8 +200,33 @@ def startServer():
 # View current external connections
 def viewConnections(admin=False):
     log.debug("Checking Status of Agent Connection(s)...")
-    # TODO Finish this
-    print("TODO: View Agent's External Connections")
+    try:
+        with dbm.open('cache_agent', 'r') as db:
+            # get total records
+            total = int((db.get('total')).decode("utf-8"))
+            # Display Records for each
+            for k in range(total):
+                # Create names based on connection number
+                readname = "%s.name" % (k + 1)
+                readport = "%s.port" % (k + 1)
+                readid = "%s.id" % (k + 1)
+                readtime = "%s.time" % (k + 1)
+                print("\nConnection #%d of %d:" % ((k + 1), total))
+                nameAnswer = (db.get(readname)).decode("utf-8")
+                portAnswer = (db.get(readport)).decode("utf-8")
+                idAnswer = (db.get(readid)).decode("utf-8")
+                timeAnswer = (db.get(readtime)).decode("utf-8")
+                print("Name: %s" % nameAnswer)
+                print("Port: %s" % portAnswer)
+                if admin:
+                    print("ID: %s" % idAnswer)
+                print("Connected as of: %s\n" % timeAnswer)
+                log.debug("Read record %d Successfully" % (k + 1))
+            print("END OF RECORDS")
+    except:
+        log.debug("ERROR READING from Cache file!!!")
+
+    log.debug("End of View Connections Fn")
 
 
 # Simple test function to ensure communication is working
@@ -240,9 +266,59 @@ def stopServer():
     log.debug("Stopping Agent Server.")
     # TODO Determine if it is possible to stop a daemon thread
     # without stopping the whole program; for now, this just
-    # ends the entire program
-    print("Agent Server Stopping.")
-    myQuit()
+    # disconnects from Controller and leaves daemon running
+
+    # Get current connection list to choose which one to close
+    try:
+        with dbm.open('cache_agent', 'r') as db:
+            # get total records
+            total = int((db.get('total')).decode("utf-8"))
+            # Display Records for each
+            for k in range(total):
+                # Create names based on connection number
+                readname = "%s.name" % (k + 1)
+                readport = "%s.port" % (k + 1)
+                readid = "%s.id" % (k + 1)
+                readtime = "%s.time" % (k + 1)
+                print("\nConnection #%d of %d:" % ((k + 1), total))
+                nameAnswer = (db.get(readname)).decode("utf-8")
+                portAnswer = (db.get(readport)).decode("utf-8")
+                idAnswer = (db.get(readid)).decode("utf-8")
+                timeAnswer = (db.get(readtime)).decode("utf-8")
+                print("Name: %s" % nameAnswer)
+                print("Port: %s" % portAnswer)
+                print("ID: %s" % idAnswer)
+                print("Connected as of: %s\n" % timeAnswer)
+                log.debug("Read record %d Successfully" % (k + 1))
+            print("END OF RECORDS")
+    except:
+        log.debug("ERROR READING from Cache file!!!")
+
+    # TODO Add user choice menu here
+
+    # Close connection chosen by user
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    myurl = ''.join(['https://', nameAnswer, ':', portAnswer])
+    with xmlrpc.client.ServerProxy(myurl,
+                                   context=myContext) as proxy:
+
+        # Send server my name and port number
+        try:
+            log.info("Disconnecting from controller: "
+                     "%s" % (proxy.disconnectAgent(config.agntHostName,
+                                                   idAnswer,
+                                                   timeAnswer)))
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Controller Server FAILED")
+            print("Connection to Controller Server FAILED:\n",
+                  "Is Controller listening? Confirm connection",
+                  "settings and try again.")
+
+    log.debug("End of Disconnect Agent Fn")
+    print("Agent Disconnected.")
 
 
 def invalid(choice):
@@ -255,9 +331,10 @@ def adminMenu():
     print("Admin Menu:")
     print("a) Connection Test (simple math test)")
     print("b) SSL Verification (verify certificates")
-    print("c) STOP Agent Server (program will exit)")
+    print("c) STOP/Disconnect Agent Server")
     print("d) START* Agent Server (*start/re-start/start additional)")
     print("e) Re-Register with Controller")
+    print("f) View External Connections (with Admin view)")
     print("9) BACK (return to 'Menu')")
     return input("Make a Choice\n>>> ")
 
@@ -275,6 +352,8 @@ def adminSelection():
         startServer()
     elif adminChoice == "e":
         establishConnection(config.ctlrHostName, config.ctlrServerPort)
+    elif adminChoice == "f":
+        viewConnections(True)
     elif adminChoice == "9":
         log.debug("Admin is De-selected")
         print("Back to Main Menu...")

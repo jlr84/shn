@@ -30,16 +30,18 @@ def failed(name):
     return "Failed registration acknowledged."
 
 
-def confirm(name, idnum, time):
+def confirm(name, port, idnum, time):
     log = logging.getLogger(__name__)
     log.debug("Agent Registered to "
-              "%s [Conf# %d] at %s." % (name, idnum, time))
+              "%s:%d [Conf# %d] at %s." % (name, port, idnum, time))
 
-    log.debug("Values Received: %s, %d, %s" % (name, idnum, time))
+    log.debug("Values Received: %s, %d, %d, %s" % (name, port, idnum, time))
     storeName = str(name)
+    storePort = str(port)
     storeID = str(idnum)
     storeTime = str(time)
-    log.debug("Values Storing: %s, %s, %s" % (storeName, storeID, storeTime))
+    log.debug("Values Storing: %s, %s, %s, %s" % (storeName, storePort,
+                                                  storeID, storeTime))
 
     try:
         with dbm.open('cache_agent', 'w') as db:
@@ -49,25 +51,31 @@ def confirm(name, idnum, time):
             db['total'] = newtotal
             # Create names based on connection number
             savename = "%s.name" % (newtotal)
+            saveport = "%s.port" % (newtotal)
             saveid = "%s.id" % (newtotal)
             savetime = "%s.time" % (newtotal)
             # Save connection info to persistent storage
             db[savename] = storeName
+            db[saveport] = storePort
             db[saveid] = storeID
             db[savetime] = storeTime
             log.debug("Cache found. Values stored in old cache.")
-            log.debug("Saved: %s, %s, %s" % (storeName, storeID, storeTime))
+            log.debug("Saved: %s, %s, %s, %s" % (storeName, storePort,
+                                                 storeID, storeTime))
     except:
         log.debug("No cache file found; creating new file.")
         with dbm.open('cache_agent', 'c') as db:
             db['total'] = "1"
             savename = "1.name"
+            saveport = "1.port"
             saveid = "1.id"
             savetime = "1.time"
             db[savename] = storeName
+            db[saveport] = storePort
             db[saveid] = storeID
             db[savetime] = storeTime
-            log.debug("Saved: %s, %s, %s" % (storeName, storeID, storeTime))
+            log.debug("Saved: %s, %s, %s, %s" % (storeName, storePort,
+                                                 storeID, storeTime))
 
     returnMessage = ''.join(["Conf# ", str(idnum), " Acknowledged."])
     return returnMessage

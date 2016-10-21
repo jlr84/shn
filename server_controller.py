@@ -87,6 +87,7 @@ def controlAgent(host, port, agtAlias):
             if success:
                 log.debug("Insert SUCCESS. [success==True]")
                 response = proxy.confirm(config.ctlrHostName,
+                                         config.ctlrServerPort,
                                          thisID, thisTime)
                 log.info(response)
             else:
@@ -130,6 +131,68 @@ def divide(x, y):
     return x/y
 
 
+# Disconnect Agent from controller
+def disconnectAgent(agentHostName, connectionID, timestamp):
+    log = logging.getLogger(__name__)
+    log.info("Starting Disconnect Agent function")
+
+    # Connect to database to disconnect agent
+    log.debug("Connecting to database")
+    db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
+                         user=config.ctlrMysqlUser, passwd=config.ctlrMysqlPwd,
+                         db=config.mysqlDB)
+    cursor = db.cursor()
+
+    # Query to retrieve id/time of registration
+    sql = "SELECT id, host, timestamp "\
+          "FROM agents WHERE (host, id) = "\
+          "('%s', %s) ORDER BY timestamp DESC LIMIT 1" % \
+        (agentHostName, connectionID)
+
+    # Get time of registration
+    try:
+        # Execute the SQL command
+        cursor.execute(sql)
+        # Fetch all the rows in a list of lists
+        results = cursor.fetchall()
+        for row in results:
+            thisID = row[0]
+            thisTime = row[2]
+            thisTime = str(thisTime.isoformat())
+
+        log.debug("ID/TIME Recorded as: %d, %s" % (thisID, thisTime))
+
+        if thisTime == timestamp:
+            log.debug("TIMESTAMPS MATCH!!!")
+            log.debug("Removing from database...")
+
+            # Query to delete proper rows
+            sql = "DELETE FROM agents WHERE host='%s' "\
+                  "AND id<=%s;" % \
+                (agentHostName, connectionID)
+
+            # Try delete operation
+            try:
+                # Execute the SQL command
+                cursor.execute(sql)
+                # Commit the changes
+                db.commit()
+                log.info("Records successfully deleted.")
+            except:
+                db.rollback()
+                log.exception("ERROR in db query>> %s" % sql)
+        else:
+            log.warning("Timestamps DO NOT match!!")
+
+    except:
+        log.exception("ERROR in db query>> %s" % sql)
+
+    # Disconnect from database
+    db.close()
+    return "Successful Disconnect"
+
+
+# Register Agent with Controller so Agent can receive commands
 def registerAgent(agentHostName, agentPortNum, agentAlias):
     log = logging.getLogger(__name__)
     log.info("Starting registerAgent function")
@@ -181,6 +244,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(subtract, 'subtract')
         server.register_function(multiply, 'multiply')
         server.register_function(divide, 'divide')
+        server.register_function(disconnectAgent, 'disconnectAgent')
         server.register_function(registerAgent, 'registerAgent')
 
         # Start server listening [forever]
