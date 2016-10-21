@@ -252,6 +252,45 @@ def mathTest():
                   "settings and try again.")
 
 
+# Send status update
+def sendStatus():
+
+    log.debug("Start of Send Status Function...")
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    print("Enter Current Status:")
+    print("1) CLEAN[1]")
+    print("2) Compromised[999]")
+    answer = input("Make a choice\n>>>")
+    if answer == "1":
+        mystatus = 1
+    else:
+        mystatus = 999
+
+    if mystatus == 1:
+        print("Status selected: 'CLEAN'")
+    else:
+        print("Status selected: 'COMPROMISED'")
+    print("If this is incorrect, resubmit IMMEDIATELY!")
+
+    myurl = ''.join(['https://', config.mntrHostName, ':',
+                     str(config.mntrServerPort)])
+    with xmlrpc.client.ServerProxy(myurl,
+                                   context=myContext) as proxy:
+        try:
+            response = proxy.reportStatus(agntHostName, mystatus,
+                                          agntServerPort, AGENT_ALIAS)
+            log.debug("Update status response: %s" % response)
+            print(response)
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Controller Server FAILED")
+            print("Connection to Controller Server FAILED:\n",
+                  "Is Controller listening? Confirm connection",
+                  "settings and try again.")
+
+
 # Quit gracefully after terminting all child processes
 def myQuit():
     log.info("Agent Exiting. Goodbye.")
@@ -425,6 +464,7 @@ def menu():
     print("MENU:")
     print("1) Check AGENT server status")
     print("2) View External Connections")
+    print("3) Send Status to Monitor")
     print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
@@ -441,6 +481,8 @@ def myMenu():
         checkServer()
     elif choice == "2":
         viewConnections()
+    elif choice == "3":
+        sendStatus()
     elif choice == "9":
         admin_selected = True
         log.debug("Admin is Selected")
