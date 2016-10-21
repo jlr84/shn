@@ -28,18 +28,18 @@ def divide(x, y):
 def startVM():
     log = logging.getLogger(__name__)
     log.debug("Starting up VM...")
-    rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud1.cfg", 
+    rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud1.cfg",
                          shell=True)
     result = "999"
     if rc == 0:
         result = "Success"
     elif rc == 1:
-	result = "Failed"
+        result = "Failed"
         print("Starting VM... FAILED")
-	print("Is the Agent running as root/sudo as required?")
+        print("Is the Agent running as root/sudo as required?")
     else:
-	result = "Failed"
-    log.debug("Starting VM: %s." % result)
+        result = "Failed"
+        log.debug("Starting VM: %s." % result)
     return "Starting VM: %s." % result
 
 
@@ -51,13 +51,13 @@ def stopVM():
     if rc == 0:
         result = "Success"
     elif rc == 1:
-	result = "Failed"
-	print("Stopping VM... FAILED")
-	print("Is the Agent running as root/sudo as required?")
+        result = "Failed"
+        print("Stopping VM... FAILED")
+        print("Is the Agent running as root/sudo as required?")
     else:
-	result = "Failed"
-	print("Stopping VM... FAILED")
-	
+        result = "Failed"
+        print("Stopping VM... FAILED")
+
     log.debug("Stopping VM %s." % result)
     return "Shutting down VM: %s." % result
 
