@@ -486,6 +486,7 @@ if __name__ == '__main__':
     print("Host IP: %s" % (hostIP))
     print("Hostname: %s" % (verifyHostName))
     log.debug("PID: %d" % (pid))
+    AGENT_ALIAS = hostIP
 
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")
