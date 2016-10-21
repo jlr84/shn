@@ -102,14 +102,48 @@ def controlAgent(host, port, agtAlias):
             print("Connection to Agent FAILED:")
             print("Is Agent listening? Confirm and try again.")
 
-    # Run check on system status
-
-    # Send Command to Agent
-
     log.info("Entering 'while True' loop now.")
     while True:
-        log.info("ControlAgent: Sleeping 30...")
-        time.sleep(30)
+        log.info("ControlAgent: Sleeping for 60 seconds...")
+        time.sleep(60)
+
+        # Connect to database to check monitor
+        log.debug("Connecting to database")
+        db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
+                             user=config.ctlrMysqlUser,
+                             passwd=config.ctlrMysqlPwd,
+                             db=config.mysqlDB)
+        cursor = db.cursor()
+
+        # Query to register agent
+        sql = "SELECT status, timestamp FROM status WHERE "\
+              "agent = '%s' ORDER BY timestamp DESC LIMIT 1;" % \
+            (host)
+
+        log.debug("SQL Query Made [shown as follows]:")
+        log.debug(sql)
+
+        # Register Agent in database
+        try:
+            # Execute the SQL command
+            cursor.execute(sql)
+            # Fetch all the rows
+            results = cursor.fetchall()
+            for row in results:
+                thisAnswer = row[0]
+                thisTime = row[1]
+
+            log.debug("thisAnswer: %s" % thisAnswer)
+            if thisAnswer == 1:
+                print("Host '%s' CLEAN as of '%s'." % (host, thisTime))
+            else:
+                print("Host '%s' INFECTED!! as of '%s'." % (host, thisTime))
+                # TODO Make function to take appropriate action
+
+            log.debug("Monitor query update successful")
+        except:
+            # Rollback in case there is any error
+            log.exception("ERROR in db query>> %s" % sql)
 
 
 #############################################################
