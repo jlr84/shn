@@ -101,7 +101,7 @@ def reportStatus(host, status, port, agtAlias, ctlrid=0):
     log.debug("End or reportStatus Function")
 
     mymsg = ''.join(["Registering Update Complete; ", host,
-                     " Status: ", status, "."])
+                     " Status: ", str(status), "."])
     log.debug(mymsg)
     return mymsg
 
