@@ -3,6 +3,7 @@ import ssl
 import logging
 import config
 import dbm
+import subprocess
 
 
 ######################################
@@ -22,6 +23,43 @@ def multiply(x, y):
 
 def divide(x, y):
     return x/y
+
+
+def startVM():
+    log = logging.getLogger(__name__)
+    log.debug("Starting up VM...")
+    rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud1.cfg", 
+                         shell=True)
+    result = "999"
+    if rc == 0:
+        result = "Success"
+    elif rc == 1:
+	result = "Failed"
+        print("Starting VM... FAILED")
+	print("Is the Agent running as root/sudo as required?")
+    else:
+	result = "Failed"
+    log.debug("Starting VM: %s." % result)
+    return "Starting VM: %s." % result
+
+
+def stopVM():
+    log = logging.getLogger(__name__)
+    log.debug("Stopping VM...")
+    rc = subprocess.call("/usr/sbin/xl shutdown ubud1", shell=True)
+    result = 999
+    if rc == 0:
+        result = "Success"
+    elif rc == 1:
+	result = "Failed"
+	print("Stopping VM... FAILED")
+	print("Is the Agent running as root/sudo as required?")
+    else:
+	result = "Failed"
+	print("Stopping VM... FAILED")
+	
+    log.debug("Stopping VM %s." % result)
+    return "Shutting down VM: %s." % result
 
 
 def failed(name):
