@@ -5,6 +5,7 @@ import os         # Required for Forking/child processes
 import sys        # Required for getting command-line arguments
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
+import datetime
 import dbm
 import server_agent as myServer
 import certs.gencert as gencert
@@ -220,7 +221,7 @@ def viewConnections(admin=False):
                 print("Port: %s" % portAnswer)
                 if admin:
                     print("ID: %s" % idAnswer)
-                print("Connected as of: %s\n" % timeAnswer)
+                print("Status updated: %s\n" % timeAnswer)
                 log.debug("Read record %d Successfully" % (k + 1))
             print("END OF RECORDS")
     except:
@@ -268,6 +269,12 @@ def stopServer():
     # without stopping the whole program; for now, this just
     # disconnects from Controller and leaves daemon running
 
+    names = []
+    ports = []
+    ids = []
+    times = []
+    total = 0
+
     # Get current connection list to choose which one to close
     try:
         with dbm.open('cache_agent', 'r') as db:
@@ -281,41 +288,87 @@ def stopServer():
                 readid = "%s.id" % (k + 1)
                 readtime = "%s.time" % (k + 1)
                 print("\nConnection #%d of %d:" % ((k + 1), total))
-                nameAnswer = (db.get(readname)).decode("utf-8")
-                portAnswer = (db.get(readport)).decode("utf-8")
-                idAnswer = (db.get(readid)).decode("utf-8")
-                timeAnswer = (db.get(readtime)).decode("utf-8")
-                print("Name: %s" % nameAnswer)
-                print("Port: %s" % portAnswer)
-                print("ID: %s" % idAnswer)
-                print("Connected as of: %s\n" % timeAnswer)
+                names.append((db.get(readname)).decode("utf-8"))
+                ports.append((db.get(readport)).decode("utf-8"))
+                ids.append((db.get(readid)).decode("utf-8"))
+                times.append((db.get(readtime)).decode("utf-8"))
+                print("Name: %s" % names[k])
+                print("Port: %s" % ports[k])
+                print("ID: %s" % ids[k])
+                print("Status updated: %s\n" % times[k])
                 log.debug("Read record %d Successfully" % (k + 1))
             print("END OF RECORDS")
     except:
         log.debug("ERROR READING from Cache file!!!")
 
-    # TODO Add user choice menu here
+    # Get user choice of which connection to quit
+    if total == 0:
+        log.debug("ZERO connections; no connections to close")
+        print("No connections to close.")
+    else:
+        log.debug("Getting user choice of what connection to quit.")
+        print("Confirm the connection you wish to terminate.")
+        options = []
+        for k in range(total):
+            print("%d) ID: %s; Name: %s" % ((k + 1), ids[k], names[k]))
+            options.append(str(k + 1))
+        s = input("Make a Choice\n>>>")
+        t = int(s) - 1
+        if s not in options:
+            invalid(s)
+            print("Try Again. Valid options are %s." % (options))
+            print("Exiting to Menu.")
+        elif ports[t] == "000000":
+            log.debug("PortNumber: %s" % ports[t])
+            print("Connection already closed.")
+            print("Exiting to Menu.")
+        else:
+            # Close connection chosen by user
+            myContext = ssl.create_default_context()
+            myContext.load_verify_locations(config.CACERTFILE)
 
-    # Close connection chosen by user
-    myContext = ssl.create_default_context()
-    myContext.load_verify_locations(config.CACERTFILE)
+            myurl = ''.join(['https://', names[t], ':', ports[t]])
+            with xmlrpc.client.ServerProxy(myurl,
+                                           context=myContext) as proxy:
 
-    myurl = ''.join(['https://', nameAnswer, ':', portAnswer])
-    with xmlrpc.client.ServerProxy(myurl,
-                                   context=myContext) as proxy:
+                # Send server my name and port number
+                try:
+                    log.info("Disconnecting from controller: "
+                             "%s" % (proxy.disconnectAgent(config.agntHostName,
+                                                           ids[t],
+                                                           times[t])))
 
-        # Send server my name and port number
-        try:
-            log.info("Disconnecting from controller: "
-                     "%s" % (proxy.disconnectAgent(config.agntHostName,
-                                                   idAnswer,
-                                                   timeAnswer)))
+                except ConnectionRefusedError:
+                    log.warning("Connection to Controller Server FAILED")
+                    print("Connection to Controller Server FAILED:\n",
+                          "Is Controller listening? Confirm connection",
+                          "settings and try again.")
 
-        except ConnectionRefusedError:
-            log.warning("Connection to Controller Server FAILED")
-            print("Connection to Controller Server FAILED:\n",
-                  "Is Controller listening? Confirm connection",
-                  "settings and try again.")
+            # Remove connection from cache
+            delName = names[t]
+            delid = ids[t]
+            for k in range(total):
+                if names[k] == delName:
+                    if ids[k] <= delid:
+                        try:
+                            with dbm.open('cache_agent', 'w') as db:
+                                savename = "%s.name" % (k + 1)
+                                saveport = "%s.port" % (k + 1)
+                                saveid = "%s.id" % (k + 1)
+                                savetime = "%s.time" % (k + 1)
+                                db[savename] = "CONNECTION_CLOSED"
+                                db[saveport] = "000000"
+                                db[saveid] = "000000"
+                                time = (datetime.datetime.now()).isoformat()
+                                db[savetime] = str(time)
+                                log.debug("Cache found. Values deleted.")
+                        except:
+                            log.warning("Error updating cache.")
+                    else:
+                        log.debug("Wrong id range")
+                else:
+                    log.debug("Wrong name")
+            log.debug("End of cache update")
 
     log.debug("End of Disconnect Agent Fn")
     print("Agent Disconnected.")
