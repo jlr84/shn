@@ -3,7 +3,8 @@ import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
 import time       # Required for sleep call
-import threading  # Required for communication sub-threadsi
+import threading  # Required for communication sub-threads
+import pymysql
 import server_controller as myServer
 import certs.gencert as gencert
 import config
@@ -137,8 +138,65 @@ def startControlAgent(hostName, portNum):
 # Display Agents currently connected
 def displayAgents():
     log.debug("Displaying agents now")
-    # TODO Finish this
-    print("TODO: Display Agents")
+    print("Displaying agents currently connected...")
+    # Connect to database to query agents
+    log.debug("Connecting to database")
+    db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
+                         user=config.ctlrMysqlUser, passwd=config.ctlrMysqlPwd,
+                         db=config.mysqlDB)
+    cursor = db.cursor()
+
+    # Query to retrieve id/time of registration
+    sql = "SELECT distinct host FROM agents;"
+
+    hosts = []
+
+    # Get hosts
+    try:
+        # Execute the SQL command
+        cursor.execute(sql)
+        # Fetch all the rows in a list of lists
+        results = cursor.fetchall()
+        for row in results:
+            thisHost = row[0]
+            hosts.append(thisHost)
+
+        log.debug("Host Received as: %s" % (thisHost))
+
+    except:
+        log.exception("ERROR in db query>> %s" % sql)
+
+    print("FOUND %d agent(s) connected.\n" % len(hosts))
+
+    # Query to retrieve each host's data
+    for k in range(len(hosts)):
+        sql = "SELECT host, port, timestamp, id FROM "\
+              "agents where host = '%s' ORDER BY id "\
+              "DESC LIMIT 1" % (hosts[k])
+
+        # Get host info
+        try:
+            # Execute the SQL command
+            cursor.execute(sql)
+            # Fetch all the rows in a list of lists
+            results = cursor.fetchall()
+            print("Agent #%d" % (k + 1))
+            for row in results:
+                thisHost = row[0]
+                thisPort = row[1]
+                thisTime = row[2]
+                thisID = row[3]
+            print("Host: %s" % thisHost)
+            print("Port: %s" % thisPort)
+            print("Time Connected: %s" % thisTime)
+            print("ID Number: %s\n" % thisID)
+            log.debug("Host %d Displayed" % (k + 1))
+
+        except:
+            log.exception("ERROR in db query>> %s" % sql)
+
+    # Disconnect from database
+    db.close()
 
 
 # Send command to Agent manually
