@@ -169,6 +169,9 @@ def mathTest():
 # Quit gracefully after terminting all child processes
 def myQuit():
     log.info("Agent Exiting. Goodbye.")
+
+    # Delete agent cache file
+    os.remove("cache_agent")
     print("Agent Exiting. Goodbye.\n")
     raise SystemExit
 

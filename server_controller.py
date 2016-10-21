@@ -20,7 +20,7 @@ def controlAgent(host, port, agtAlias):
     log.debug("Connecting to database")
     db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
                          user=config.ctlrMysqlUser, passwd=config.ctlrMysqlPwd,
-                         db=config.ctlrdb)
+                         db=config.mysqlDB)
     cursor = db.cursor()
 
     # Query to register agent
@@ -61,6 +61,7 @@ def controlAgent(host, port, agtAlias):
         for row in results:
             thisID = row[0]
             thisTime = row[1]
+            thisTime = str(thisTime.isoformat())
         success = True
         log.debug("ID/TIME Recorded as: %d, %s" % (thisID, thisTime))
 
@@ -84,15 +85,15 @@ def controlAgent(host, port, agtAlias):
             log.info("Sending Confirmation...")
             print("Sending Confirmation...")
             if success:
-                log.debug("Sending SUCCESS. [success==True]")
+                log.debug("Insert SUCCESS. [success==True]")
                 response = proxy.confirm(config.ctlrHostName,
                                          thisID, thisTime)
+                log.info(response)
             else:
-                log.debug("Sending FAILURE. [success==False]")
+                log.debug("Insert FAILURE. [success==False]")
                 response = proxy.failed(config.ctlrHostName)
+                log.info(response)
 
-            log.info(response)
-            print("%s" % response)
             print("33 x 3 is %d" % (proxy.multiply(33, 3)))
 
         except ConnectionRefusedError:
@@ -135,7 +136,7 @@ def registerAgent(agentHostName, agentPortNum, agentAlias):
 
     # Start child process to run function for
     #  registering and eommunicating with Agent
-    tName = ''.join(["Server-", agentHostName])
+    tName = ''.join(["Controller_to_", agentHostName])
     t = threading.Thread(name=tName,
                          target=controlAgent,
                          args=(agentHostName,

@@ -2,6 +2,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 import ssl
 import logging
 import config
+import dbm
 
 
 ######################################
@@ -33,7 +34,43 @@ def confirm(name, idnum, time):
     log = logging.getLogger(__name__)
     log.debug("Agent Registered to "
               "%s [Conf# %d] at %s." % (name, idnum, time))
-    return "Conf# %d Acknowledged." % (idnum)
+
+    log.debug("Values Received: %s, %d, %s" % (name, idnum, time))
+    storeName = str(name)
+    storeID = str(idnum)
+    storeTime = str(time)
+    log.debug("Values Storing: %s, %s, %s" % (storeName, storeID, storeTime))
+
+    try:
+        with dbm.open('cache_agent', 'w') as db:
+            # Get current total and add 1 with type conversions
+            newtotal = str(int((db.get('total')).decode("utf-8")) + 1)
+            # Store new total in persistent storage
+            db['total'] = newtotal
+            # Create names based on connection number
+            savename = "%s.name" % (newtotal)
+            saveid = "%s.id" % (newtotal)
+            savetime = "%s.time" % (newtotal)
+            # Save connection info to persistent storage
+            db[savename] = storeName
+            db[saveid] = storeID
+            db[savetime] = storeTime
+            log.debug("Cache found. Values stored in old cache.")
+            log.debug("Saved: %s, %s, %s" % (storeName, storeID, storeTime))
+    except:
+        log.debug("No cache file found; creating new file.")
+        with dbm.open('cache_agent', 'c') as db:
+            db['total'] = "1"
+            savename = "1.name"
+            saveid = "1.id"
+            savetime = "1.time"
+            db[savename] = storeName
+            db[saveid] = storeID
+            db[savetime] = storeTime
+            log.debug("Saved: %s, %s, %s" % (storeName, storeID, storeTime))
+
+    returnMessage = ''.join(["Conf# ", str(idnum), " Acknowledged."])
+    return returnMessage
 
 
 #########################################
