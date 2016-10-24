@@ -3,13 +3,13 @@ import ssl
 import logging
 import pymysql
 import config
-import xmlrpc.client
+# import xmlrpc.client
 
 
 #####################################################
 # Main Logic for Monitor Receiving Updates
 #####################################################
-def reportStatus(host, status, port, agtAlias, ctlrid=0):
+def reportStatus(host, status, agtAlias, ctlrid=0):
     log = logging.getLogger(__name__)
     log.debug("Start of reportStatus Function...")
     print("Monitor Processing...")
@@ -17,7 +17,7 @@ def reportStatus(host, status, port, agtAlias, ctlrid=0):
     # Connect to database to register agent
     log.debug("Connecting to database")
     db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
-                         user=config.ctlrMysqlUser, passwd=config.ctlrMysqlPwd,
+                         user=config.mntrMysqlUser, passwd=config.mntrMysqlPwd,
                          db=config.mysqlDB)
     cursor = db.cursor()
 
@@ -69,39 +69,40 @@ def reportStatus(host, status, port, agtAlias, ctlrid=0):
     # Disconnect from database
     db.close()
 
-    # Connect to Agent's server daemon to confirm
-    # registration
-    myContext = ssl.create_default_context()
-    myContext.load_verify_locations(config.CACERTFILE)
-
-    thisHost = ''.join(['https://', host, ':', str(port)])
-
-    with xmlrpc.client.ServerProxy(thisHost,
-                                   context=myContext) as proxy:
-
-        try:
-            log.info("Sending Confirmation...")
-            print("Sending Confirmation...")
-            if success:
-                log.debug("Insert SUCCESS. [success==True]")
-                response = proxy.confirm(config.mntrHostName,
-                                         config.mntrServerPort,
-                                         thisID, thisTime)
-                log.info(response)
-            else:
-                log.debug("Insert FAILURE. [success==False]")
-                response = proxy.failed(config.mntrHostName)
-                log.info(response)
-
-        except ConnectionRefusedError:
-            log.warning("Connection to Agent FAILED")
-            print("Connection to Agent FAILED:")
-            print("Is Agent listening? Confirm and try again.")
-
+#    # Connect to Agent's server daemon to confirm
+#    # registration
+#    myContext = ssl.create_default_context()
+#    myContext.load_verify_locations(config.CACERTFILE)
+#
+#    thisHost = ''.join(['https://', host, ':', str(port)])
+#
+#    with xmlrpc.client.ServerProxy(thisHost,
+#                                   context=myContext) as proxy:
+#
+#        try:
+#            log.info("Sending Confirmation...")
+#            print("Sending Confirmation...")
+#            if success:
+#                log.debug("Insert SUCCESS. [success==True]")
+#                response = proxy.confirm(config.mntrHostName,
+#                                         config.mntrServerPort,
+#                                         thisID, thisTime)
+#                log.info(response)
+#            else:
+#                log.debug("Insert FAILURE. [success==False]")
+#                response = proxy.failed(config.mntrHostName)
+#                log.info(response)
+#
+#        except ConnectionRefusedError:
+#            log.warning("Connection to Agent FAILED")
+#            print("Connection to Agent FAILED:")
+#            print("Is Agent listening? Confirm and try again.")
+#
     log.debug("End or reportStatus Function")
 
-    mymsg = ''.join(["Registering Update Complete; ", host,
-                     " Status: ", str(status), "."])
+    mymsg = ''.join(["Complete; ", host,
+                     " Status: ", str(status), "; Report Success:",
+                     str(success), "."])
     log.debug(mymsg)
     return mymsg
 
@@ -115,6 +116,10 @@ def add(x, y):
 
 def multiply(x, y):
     return x*y
+
+
+def testConnection():
+    return True
 
 
 #########################################
@@ -144,6 +149,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(add, 'add')
         server.register_function(multiply, 'multiply')
         server.register_function(reportStatus, 'reportStatus')
+        server.register_function(testConnection, 'testConnection')
 
         # Start server listening [forever]
         log.info("Server listening on port %d." % (portNum))
