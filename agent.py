@@ -291,54 +291,68 @@ def sendStatus():
                   "settings and try again.")
 
 
-# Quit gracefully after terminting all child processes
-def myQuit():
-    log.info("Agent Exiting. Goodbye.")
+def masterQuitConnection(total, ids, names, ports, times):
+    log.debug("Master Quit Connection Function")
+    returnCode = 9999
 
-    # Delete agent cache file
-    os.remove("cache_agent")
-    print("Agent Exiting. Goodbye.\n")
-    raise SystemExit
+    # Get user choice of which connection to quit
+    if total == 0:
+        log.debug("ZERO connections; no connections to close")
+        print("No connections to close.")
+    else:
+        log.debug("Determining Options.")
+        options = []
+        for k in range(total):
+            log.debug("%d) ID: %s; Name: %s" % ((k + 1), ids[k], names[k]))
+            options.append(str(k + 1))
+
+        # Pick Connection to close
+        t = total
+        log.debug("Connection t: %d" % t)
+        valuePicked = False
+        t = t - 1
+
+        while not valuePicked and t > 0:
+            if ports[t] == "000000":
+                t = t - 1
+            else:
+                valuePicked = True
+
+        # Close Connection if valuePicked
+        if valuePicked:
+            log.debug("Value Picked: %d" % t)
+
+            # Close connection chosen by user
+            myContext = ssl.create_default_context()
+            myContext.load_verify_locations(config.CACERTFILE)
+
+            myurl = ''.join(['https://', names[t], ':', ports[t]])
+            with xmlrpc.client.ServerProxy(myurl,
+                                           context=myContext) as proxy:
+
+                # Send server my name and port number
+                try:
+                    log.info("Disconnecting from controller: "
+                             "%s" % (proxy.disconnectAgent(config.agntHostName,
+                                                           ids[t],
+                                                           times[t])))
+                    returnCode = t
+
+                except ConnectionRefusedError:
+                    log.warning("Connection to Controller Server FAILED")
+                    returnCode = 9999
+                    print("Connection to Controller Server FAILED:\n",
+                          "Is Controller listening? Confirm connection",
+                          "settings and try again.")
+        else:
+            log.debug("All connections closed")
+            returnCode = 111111
+    return returnCode
 
 
-# Stop Agent Server
-def stopServer():
-    log.debug("Stopping Agent Server.")
-    # TODO Determine if it is possible to stop a daemon thread
-    # without stopping the whole program; for now, this just
-    # disconnects from Controller and leaves daemon running
-
-    names = []
-    ports = []
-    ids = []
-    times = []
-    total = 0
-
-    # Get current connection list to choose which one to close
-    try:
-        with dbm.open('cache_agent', 'r') as db:
-            # get total records
-            total = int((db.get('total')).decode("utf-8"))
-            # Display Records for each
-            for k in range(total):
-                # Create names based on connection number
-                readname = "%s.name" % (k + 1)
-                readport = "%s.port" % (k + 1)
-                readid = "%s.id" % (k + 1)
-                readtime = "%s.time" % (k + 1)
-                print("\nConnection #%d of %d:" % ((k + 1), total))
-                names.append((db.get(readname)).decode("utf-8"))
-                ports.append((db.get(readport)).decode("utf-8"))
-                ids.append((db.get(readid)).decode("utf-8"))
-                times.append((db.get(readtime)).decode("utf-8"))
-                print("Name: %s" % names[k])
-                print("Port: %s" % ports[k])
-                print("ID: %s" % ids[k])
-                print("Status updated: %s\n" % times[k])
-                log.debug("Read record %d Successfully" % (k + 1))
-            print("END OF RECORDS")
-    except:
-        log.debug("ERROR READING from Cache file!!!")
+def userQuitConnection(total, ids, names, ports, times):
+    log.debug("User Quit Connection Function...")
+    returnCode = 9999
 
     # Get user choice of which connection to quit
     if total == 0:
@@ -362,6 +376,7 @@ def stopServer():
             print("Connection already closed.")
             print("Exiting to Menu.")
         else:
+            returnCode = t
             # Close connection chosen by user
             myContext = ssl.create_default_context()
             myContext.load_verify_locations(config.CACERTFILE)
@@ -379,38 +394,129 @@ def stopServer():
 
                 except ConnectionRefusedError:
                     log.warning("Connection to Controller Server FAILED")
+                    returnCode = 9999
                     print("Connection to Controller Server FAILED:\n",
                           "Is Controller listening? Confirm connection",
                           "settings and try again.")
+    return returnCode
 
-            # Remove connection from cache
-            delName = names[t]
-            delid = ids[t]
+
+# Stop Agent Server
+def stopServer(masterQuit=False):
+    log.debug("Stopping Agent Server.")
+    # TODO Determine if it is possible to stop a daemon thread
+    # without stopping the whole program; for now, this just
+    # disconnects from Controller and leaves daemon running
+
+    returnCode = 1
+    names = []
+    ports = []
+    ids = []
+    times = []
+    total = 0
+
+    # Get current connection list to choose which one to close
+    try:
+        with dbm.open('cache_agent', 'r') as db:
+            # get total records
+            total = int((db.get('total')).decode("utf-8"))
+            # Display Records for each
             for k in range(total):
-                if names[k] == delName:
-                    if ids[k] <= delid:
-                        try:
-                            with dbm.open('cache_agent', 'w') as db:
-                                savename = "%s.name" % (k + 1)
-                                saveport = "%s.port" % (k + 1)
-                                saveid = "%s.id" % (k + 1)
-                                savetime = "%s.time" % (k + 1)
-                                db[savename] = "CONNECTION_CLOSED"
-                                db[saveport] = "000000"
-                                db[saveid] = "000000"
-                                time = (datetime.datetime.now()).isoformat()
-                                db[savetime] = str(time)
-                                log.debug("Cache found. Values deleted.")
-                        except:
-                            log.warning("Error updating cache.")
-                    else:
-                        log.debug("Wrong id range")
+                # Create names based on connection number
+                readname = "%s.name" % (k + 1)
+                readport = "%s.port" % (k + 1)
+                readid = "%s.id" % (k + 1)
+                readtime = "%s.time" % (k + 1)
+                if not masterQuit:
+                    print("\nConnection #%d of %d:" % ((k + 1), total))
                 else:
-                    log.debug("Wrong name")
-            log.debug("End of cache update")
+                    log.debug("Connection #%d of %d:" % ((k + 1), total))
+
+                names.append((db.get(readname)).decode("utf-8"))
+                ports.append((db.get(readport)).decode("utf-8"))
+                ids.append((db.get(readid)).decode("utf-8"))
+                times.append((db.get(readtime)).decode("utf-8"))
+                if not masterQuit:
+                    print("Name: %s" % names[k])
+                    print("Port: %s" % ports[k])
+                    print("ID: %s" % ids[k])
+                    print("Status updated: %s\n" % times[k])
+                    log.debug("Read record %d Successfully" % (k + 1))
+                else:
+                    log.debug("Name: %s" % names[k])
+                    log.debug("Port: %s" % ports[k])
+                    log.debug("ID: %s" % ids[k])
+                    log.debug("Status updated: %s" % times[k])
+                    log.debug("Read record %d Successfully" % (k + 1))
+            if not masterQuit:
+                print("END OF RECORDS")
+            else:
+                log.debug("END OF RECORDS")
+    except:
+        log.debug("ERROR READING from Cache file!!!")
+
+    t = 9999
+
+    if total > 0:
+        if masterQuit:
+            t = masterQuitConnection(total, ids, names, ports, times)
+        else:
+            t = userQuitConnection(total, ids, names, ports, times)
+
+    if t not in [9999, 111111]:
+        # Remove connection from cache
+        delName = names[t]
+        delid = ids[t]
+        for k in range(total):
+            if names[k] == delName:
+                if ids[k] <= delid:
+                    try:
+                        with dbm.open('cache_agent', 'w') as db:
+                            savename = "%s.name" % (k + 1)
+                            saveport = "%s.port" % (k + 1)
+                            saveid = "%s.id" % (k + 1)
+                            savetime = "%s.time" % (k + 1)
+                            db[savename] = "CONNECTION_CLOSED"
+                            db[saveport] = "000000"
+                            db[saveid] = "000000"
+                            time = (datetime.datetime.now()).isoformat()
+                            db[savetime] = str(time)
+                            log.debug("Cache found. Values deleted.")
+                    except:
+                        log.warning("Error updating cache.")
+                else:
+                    log.debug("Wrong id range")
+            else:
+                log.debug("Wrong name")
+        log.debug("End of cache update")
+
+    elif t == 111111:
+        returnCode = 111111
+        log.debug("All connections already closed; rc=111111")
+    else:
+        returnCode = 9999
+        log.debug("No connections closed; rc=9999")
 
     log.debug("End of Disconnect Agent Fn")
-    print("Agent Disconnected.")
+    return returnCode
+
+
+# Quit gracefully after terminting all child processes
+def myQuit():
+    log.info("Agent Exiting. Goodbye.")
+
+    # Disconnecting from Controller
+    log.info("Disconnecting from Controller")
+    rc = 0
+    while rc not in [9999, 111111]:
+        log.debug("Running stopServer once...")
+        rc = stopServer(True)
+
+    # Delete agent cache file
+    log.debug("Deleting Agent Cache File")
+    os.remove("cache_agent")
+    print("Agent Exiting. Goodbye.\n")
+    raise SystemExit
 
 
 def invalid(choice):
