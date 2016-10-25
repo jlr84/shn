@@ -71,9 +71,9 @@ def reportStatus(host, status, agtAlias, ctlrid=0):
 
     log.debug("End or reportStatus Function")
 
-    mymsg = ''.join(["Complete; ", host,
-                     " Status: ", str(status), "; Report Success:",
-                     str(success), "."])
+    mymsg = ''.join(["Rec'd: ", host,
+                     " [", str(status), "]; Success:",
+                     str(success)])
     log.debug(mymsg)
     return mymsg
 

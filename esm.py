@@ -2,32 +2,48 @@ import xmlrpc.client
 import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
-import sys        # Required for getting command-line arguments
 import time       # Required for sleep call
+import threading
 import datetime
 import dbm
+import argparse
+import random
 import certs.gencert as gencert
 import config
 import logging
 from logging.config import fileConfig
 
+
 # Load logging config
 fileConfig('logging.conf')
 log = logging.getLogger(__name__)
-
-# ALIAS for this Agent; change as needed
 
 # Global Variables -- Don't change. [No need to change.]
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
 AGENT_ALIAS = "agent"   # Default; updated to match agent hostname when run
+SLEEP_TIME = 60         # Default; updated based on user-provided input
 admin_selected = False
+
+
+# Return pseudorandom decision on whether host is infected or
+# not; returns True if 'infected'
+def getDecision():
+    log.debug("Making a decision...")
+    number = random.randint(1, 99)
+    if number > 89:
+        answer = True
+    else:
+        answer = False
+
+    log.debug("Is host infected: %s" % answer)
+    return answer
 
 
 # Return ip address of local host where server is running
 def getMyIP():
-    log.info('Getting Host ip address')
+    log.debug('Getting Host ip address')
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 53))
     ipAdd = s.getsockname()[0]
@@ -85,11 +101,11 @@ def testConnection(remoteName=config.mntrHostName,
             print("Connection settings used:\n    '%s'" % (myurl))
 
     if testResult:
-        log.info("Connection Test to '%s' SUCCESSFUL!" & myurl)
-        print("Connection Test to '%s' SUCCESSFUL!" & myurl)
+        log.info("Connection Test to '%s' SUCCESSFUL!" % myurl)
+        print("Connection Test to '%s' SUCCESSFUL!" % myurl)
     else:
-        log.info("Connection Test to '%s' FAILED!" & myurl)
-        print("Connection Test to '%s' FAILED!" & myurl)
+        log.info("Connection Test to '%s' FAILED!" % myurl)
+        print("Connection Test to '%s' FAILED!" % myurl)
 
 
 # Change/Update the Monitor's connection settings
@@ -98,7 +114,7 @@ def updateMonitor():
     print("DEFAULT Monitor Hostname: 'monitor.shn.local'")
     print("CURRENT Monitor Hostname: '%s'" % config.mntrHostName)
     print("ENTER NEW Monitor Hostname: ['q' to keep current]")
-    tempNewHost = input(">>>")
+    tempNewHost = input(">>> ")
     if tempNewHost == 'q':
         log.debug("No Change")
     elif tempNewHost == 'd':
@@ -109,7 +125,7 @@ def updateMonitor():
     print("DEFAULT Monitor Port: '36363'")
     print("CURRENT Monitor Port: '%s'" % config.mntrServerPort)
     print("ENTER NEW Monitor Port: ['q' to keep current]")
-    tempNewPort = input(">>>")
+    tempNewPort = input(">>> ")
     if tempNewPort == 'q':
         log.debug("No Change")
     elif tempNewPort == 'd':
@@ -293,7 +309,7 @@ def sendStatus(state=0, userInput=True):
         print("Enter Current Status:")
         print("1) CLEAN ['1']")
         print("2) COMPROMISED ['999']")
-        answer = input("Make a choice\n>>>")
+        answer = input("Make a choice\n>>> ")
         if answer == "1":
             mystatus = 1
         else:
@@ -316,7 +332,8 @@ def sendStatus(state=0, userInput=True):
             response = proxy.reportStatus(hostIP, mystatus,
                                           AGENT_ALIAS)
             log.debug("Response: %s" % response)
-            print(response)
+            if userInput:
+                print("Response from Monitor: %s" % response)
             timeConfirmed = str(datetime.datetime.now())
             log.debug("Time Confirmed: %s" % timeConfirmed)
             logStatus(mystatus, timeConfirmed)
@@ -324,15 +341,17 @@ def sendStatus(state=0, userInput=True):
 
         except ConnectionRefusedError:
             log.warning("Connection to Monitor Server FAILED")
-            print("Connection to Monitor Server FAILED:\n",
-                  "Is Monitor listening? Confirm connection",
-                  "settings and try again.")
-            print("Settings used: '%s'" % myurl)
+            if userInput:
+                print("Connection to Monitor Server FAILED:\n",
+                      "Is Monitor listening? Confirm connection",
+                      "settings and try again.")
+                print("Settings used: '%s'" % myurl)
 
         except:
             log.warning("Connection to Monitor Server FAILED")
-            print("Connection Failed. Suspected incorrect URL.")
-            print("Settings used: '%s'" % myurl)
+            if userInput:
+                print("Connection Failed. Suspected incorrect URL.")
+                print("Settings used: '%s'" % myurl)
 
 
 def deleteHistory(no_confirmation=False):
@@ -343,7 +362,7 @@ def deleteHistory(no_confirmation=False):
     else:
         # Get confirmation from user
         print("Confirm you wish to DELETE ALL SAVED HISTORY:")
-        answer = input("Confirm YES['y'] or NO['n']:\n>>>")
+        answer = input("Confirm YES['y'] or NO['n']:\n>>> ")
 
         if answer in ["y", "Y", "YES", "yes", "Yes"]:
             log.debug("Request for deletion confirmed.")
@@ -360,6 +379,109 @@ def deleteHistory(no_confirmation=False):
         log.info("History Deleted.")
     else:
         log.debug("History was NOT deleted.")
+
+
+# Run basic 'simulator' to determine infection status
+def basicSimulation(sleeptime=60):
+    log.debug("Running basic simulation")
+
+    # Report status as CLEAN three times
+    log.debug("Reporting status CLEAN three times.")
+
+    for k in range(3):
+        currentStatus = 1
+
+        # Log current state
+        log.debug("Current Status: CLEAN ['1']")
+
+        # Report current state
+        sendStatus(state=currentStatus, userInput=False)
+
+        # Sleep One Time period
+        time.sleep(sleeptime)
+
+    # Report status as COMPROMISED three times
+    for k in range(3):
+        currentStatus = 999
+
+        # Log current state
+        log.debug("Current Status: COMPROMISED ['999']")
+        # If this is the first time this is reported compromised
+        # then log as a warning and print as well
+        if k == 0:
+            log.warning("HOST NOW COMPROMISED ['999']!!!")
+            print("HOST NOW COMPROMISED ['999']!!! TAKE ACTION!!!")
+
+        # Report current state
+        sendStatus(state=currentStatus, userInput=False)
+
+        # Sleep One Time period
+        time.sleep(sleeptime)
+
+
+# Run 'simulator' to randomly determine infection status
+def randomSimulation(sleeptime=60):
+    log.debug("Running random simulation")
+    while True:
+        # Get current status
+        log.debug("Checking current ESM/VM Status...")
+        lastStatus = 1
+        currentStatus = 1
+        try:
+            with dbm.open('cache_esm', 'r') as db:
+                lastStatus = int((db.get('last_status')).decode("utf-8"))
+                log.debug("Cache found. Values retrieved: %d" % lastStatus)
+        except:
+            log.debug("No cache found or read failed.")
+            print("READ FAILED or No Current Status Present")
+
+        # If current is infected, remain infected
+        if not lastStatus == 1:
+            currentStatus = lastStatus
+
+        # If current not infected, get new decision
+        else:
+            r = getDecision()
+            if r:
+                currentStatus = 999
+            else:
+                currentStatus = 1
+
+        # Log current state
+        if currentStatus == 1:
+            log.debug("Current Status: CLEAN ['1']")
+        elif currentStatus == 999:
+            log.debug("Current Status: COMPROMISED ['999']")
+
+            # If this is the first time this is reported compromised
+            # then log as a warning and print as well
+            if not lastStatus == 999:
+                log.warning("HOST NOW COMPROMISED ['999']!!!")
+                print("HOST NOW COMPROMISED ['999']!!! TAKE ACTION!!!")
+
+        else:
+            log.debug("Unknown Status!!! ... %d" % currentStatus)
+
+        # Report current state
+        sendStatus(state=currentStatus, userInput=False)
+
+        # Sleep for set time limit before repeating
+        log.debug("Sleeping for %d seconds." % sleeptime)
+        time.sleep(sleeptime)
+
+
+# Start basic simulation as background / thread process
+def startBasicSimulation():
+
+    log.info("Starting basic simulation as background thread")
+    t = threading.Thread(name="BasicSimulation",
+                         target=basicSimulation,
+                         args=(SLEEP_TIME,
+                               )
+                         )
+    t.daemon = True
+    log.debug("Starting daemon simulation thread")
+    t.start()
 
 
 # Quit gracefully after terminting all child processes
@@ -423,7 +545,8 @@ def menu():
     print("2) View Monitor Connection Settings")
     print("3) Send 'CLEAN' Status to Monitor")
     print("4) Send 'COMPROMISED' Status to Monitor")
-    print("5) Test Connection with Monitor")
+    print("5) Start BASIC Simulation [in background]")
+    print("6) Test Connection with Monitor")
     print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
@@ -445,6 +568,8 @@ def myMenu():
     elif choice == "4":
         sendStatus(state=999, userInput=False)
     elif choice == "5":
+        startBasicSimulation()
+    elif choice == "6":
         testConnection()
     elif choice == "9":
         admin_selected = True
@@ -459,46 +584,124 @@ def myMenu():
         invalid(choice)
 
 
-# Start of Main
-if __name__ == '__main__':
+# Process arguments and notify user of their choices
+def processArguments(args):
+    log.info("Processing arguments...")
 
-    # Verify argument provided; if not provided use default,
-    # if too many exit, if provided use provided
-    if len(sys.argv) == 2:
-        log.debug("Using monitor hostname: %s" % (sys.argv[1]))
-        print("Using monitor hostname: \n%s" % (sys.argv[1]))
-        config.mntrHostName = sys.argv[1]
+    global AGENT_ALIAS
+    global SLEEP_TIME
+
+    # Accept user-provided monitor hostname, if provided
+    if args.monitor:
+        print("Monitor hostname set manually")
+        print("Using hostname: %s" % (args.monitor))
+        log.debug("Using monitor hostname: %s" % (args.monitor))
+        config.mntrHostName = args.monitor
 
     else:
-        print("usage: %s <hostname>" % sys.argv[0])
-        print("Example:\n$ %s monitor.shn.local" % sys.argv[0])
+        print("Using default monitor hostname: %s" % config.mntrHostName)
+        log.debug("Using default monitor hostname: %s" % config.mntrHostName)
 
-        # If too many arguments, exit
-        if len(sys.argv) > 2:
-            log.debug("Too many arguments. Exiting.")
-            sys.exit(1)
+    # Accept user-provided monitor port number, if provided
+    if args.port:
+        print("Monitor port set manually")
+        print("Using port#: %d" % (args.port))
+        log.debug("Using monitor port#: %d" % (args.port))
+        config.mntrServerPort = args.port
 
-        # If zero arguments, use default monitor hostname
-        else:
-            log.debug("Using default monitor hostname")
-            print("No monitor hostname provided.")
-            print("Using default setting: %s" % config.mntrHostName)
+    else:
+        print("Using default monitor port#: %s" % config.mntrServerPort)
+        log.debug("Using default monitor port#: %s" % config.mntrServerPort)
 
+    # Accept user-provided monitor port number, if provided
+    if args.alias:
+        print("ESM Alias set manually")
+        print("Using alias: %s" % (args.alias))
+        log.debug("Using ESM alias: %s" % (args.alias))
+        AGENT_ALIAS = args.alias
+
+    else:
+        AGENT_ALIAS = (config.agntHostName).split('.')[0]
+        log.debug("Using default ESM Alias: %s" % (AGENT_ALIAS))
+        print("Using alias: %s" % (AGENT_ALIAS))
+
+    # Accept user-provided sleep time, if provided
+    if args.time:
+        print("Sleep time set manually")
+        print("Using sleep = %d seconds" % (args.time))
+        log.debug("Using sleep = %d seconds" % (args.time))
+        SLEEP_TIME = args.time
+
+    # Announce running in Basic Simulation mode, if applicable
+    if args.basic:
+        print("ESM running simulation in basic mode.")
+        log.debug("ESM running simulation in basic mode.")
+
+    # Announce running in Simulation mode, if applicable
+    if args.simulation:
+        print("ESM now executing in simulation mode.")
+        log.debug("ESM executing in simulation mode.")
+
+    # Delete previous status hisotry, if applicable
+    if args.fresh:
+        log.debug("Fresh start selected.")
+        deleteHistory(True)
+        print("History Deleted: Starting Fresh")
+
+    log.info("End of 'process arguments.'")
+
+
+# Start of Main
+if __name__ == '__main__':
+    log.info("Starting MAIN. Parsing arguments.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-S", "--simulation", help="run ESM in simulation\
+                        mode, which does not allow user interaction",
+                        action="store_true")
+    parser.add_argument("-B", "--basic", help="run simulation in basic mode\
+                        (3 clean reports, then 3 compromised reports)\
+                        Recommendation: Use with '-t' flag to adjust pace.",
+                        action="store_true")
+    parser.add_argument("-t", "--time", help="set sleep time [in seconds]\
+                        used for simulation (Default: 60)", type=int)
+    parser.add_argument("-m", "--monitor", help="set hostname of monitor\
+                        (e.g., 'monitor.shn.local')")
+    parser.add_argument("-p", "--port", help="set port of monitor\
+                        (e.g., '36363')", type=int)
+    parser.add_argument("-a", "--alias", help="manually set ESM alias\
+                        (Note: MUST match alias of Agent running in\
+                        corresponding VM's hypervisor.)")
+    parser.add_argument("-F", "--fresh", help="start fresh: remove status\
+                        history before starting", action="store_true")
+    args = parser.parse_args()
+
+    # Process arguments
+    processArguments(args)
+
+    # Start of Main functionality
     log.info("Starting Main [ESM]")
     hostIP = getMyIP()
     pid = os.getpid()
     print("Host IP: %s" % (hostIP))
     log.debug("PID: %d" % (pid))
 
-    AGENT_ALIAS = (config.agntHostName).split('.')[0]
-    log.debug("Alias: %s" % (AGENT_ALIAS))
-    print("Alias: %s" % (AGENT_ALIAS))
-
     # Verify certificates present prior to displaying menu
     log.debug("Verifying certificates.")
     verifyCerts()
 
-    # Display Menu [repeatedly] for user
-    while True:
-        myMenu()
-        time.sleep(1)
+    # If NOT simulation mode, dispaly menu [repeatedly] for user
+    if not args.simulation:
+        while True:
+            myMenu()
+            time.sleep(1)
+
+    # Otherwise, start daemon loop retrieving no user input
+    else:
+        if args.basic:
+            log.info("Simulation loop started now (Mode=Basic).")
+            while True:
+                basicSimulation(SLEEP_TIME)
+                log.info("End of Basic simulation: Repeating.")
+        else:
+            log.info("Simulation loop started now (Mode=Normal).")
+            randomSimulation(SLEEP_TIME)
