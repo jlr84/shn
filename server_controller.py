@@ -100,6 +100,11 @@ def controlAgent(host, port, agtAlias):
             print("Connection to Agent FAILED:")
             print("Is Agent listening? Confirm and try again.")
 
+        except:
+            log.warning("Connection to Agent FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
     log.info("Entering 'while True' loop now.")
     while True:
         log.info("ControlAgent: Sleeping for 60 seconds...")

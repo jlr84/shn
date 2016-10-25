@@ -85,11 +85,11 @@ def testConnection(remoteName=config.mntrHostName,
             print("Connection settings used:\n    '%s'" % (myurl))
 
     if testResult:
-        log.info("Connection Test SUCCESSFUL!")
-        print("Connection Test SUCCESSFUL!")
+        log.info("Connection Test to '%s' SUCCESSFUL!" & myurl)
+        print("Connection Test to '%s' SUCCESSFUL!" & myurl)
     else:
-        log.info("Connection Test FAILED!")
-        print("Connection Test FAILED!")
+        log.info("Connection Test to '%s' FAILED!" & myurl)
+        print("Connection Test to '%s' FAILED!" & myurl)
 
 
 # Change/Update the Monitor's connection settings
@@ -223,6 +223,7 @@ def mathTest():
 
     myurl = ''.join(['https://', config.mntrHostName, ':',
                      str(config.mntrServerPort)])
+
     with xmlrpc.client.ServerProxy(myurl,
                                    context=myContext) as proxy:
         try:
@@ -230,10 +231,16 @@ def mathTest():
             print("11 x 9 is: %d" % (proxy.multiply(11, 9)))
 
         except ConnectionRefusedError:
-            log.warning("Connection to Monitor Server FAILED")
+            log.warning("Connection to Monitor Server REFUSED")
             print("Connection to Monitor Server FAILED:\n",
                   "Is Monitor listening? Confirm connection",
-                  "settings and try again.")
+                  "settings and port number and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Monitor Server FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 def logStatus(logStatus, logTime):
@@ -320,6 +327,12 @@ def sendStatus(state=0, userInput=True):
             print("Connection to Monitor Server FAILED:\n",
                   "Is Monitor listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Monitor Server FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 def deleteHistory(no_confirmation=False):

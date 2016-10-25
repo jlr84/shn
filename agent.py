@@ -134,6 +134,12 @@ def establishConnection(remoteName, remotePort):
             print("Connection to Controller Server FAILED:\n",
                   "Is Controller listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Controller FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 # Start a thread child to run server connection as a daemon
@@ -248,6 +254,12 @@ def mathTest():
             print("Connection to Controller Server FAILED:\n",
                   "Is Controller listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Controller FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 # Send status update
@@ -287,6 +299,12 @@ def sendStatus():
             print("Connection to Controller Server FAILED:\n",
                   "Is Controller listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Controller FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 def masterQuitConnection(total, ids, names, ports, times):
@@ -342,6 +360,14 @@ def masterQuitConnection(total, ids, names, ports, times):
                     print("Connection to Controller Server FAILED:\n",
                           "Is Controller listening? Confirm connection",
                           "settings and try again.")
+                    print("Settings used: '%s'" % myurl)
+
+                except:
+                    log.warning("Connection to Controller FAILED")
+                    returnCode = 9999
+                    print("Connection Failed. Suspected incorrect URL.")
+                    print("Settings used: '%s'" % myurl)
+
         else:
             log.debug("All connections closed")
             returnCode = 111111
@@ -396,6 +422,14 @@ def userQuitConnection(total, ids, names, ports, times):
                     print("Connection to Controller Server FAILED:\n",
                           "Is Controller listening? Confirm connection",
                           "settings and try again.")
+                    print("Settings used: '%s'" % myurl)
+
+                except:
+                    log.warning("Connection to Controller FAILED")
+                    returnCode = 9999
+                    print("Connection Failed. Suspected incorrect URL.")
+                    print("Settings used: '%s'" % myurl)
+
     return returnCode
 
 
@@ -531,6 +565,7 @@ def adminMenu():
     print("d) START* Agent Server (*start/re-start/start additional)")
     print("e) Re-Register with Controller")
     print("f) View External Connections (with Admin view)")
+    print("g) Send TEST Status to Monitor")
     print("9) BACK (return to 'Menu')")
     return input("Make a Choice\n>>> ")
 
@@ -550,6 +585,8 @@ def adminSelection():
         establishConnection(config.ctlrHostName, config.ctlrServerPort)
     elif adminChoice == "f":
         viewConnections(True)
+    elif adminChoice == "g":
+        sendStatus()
     elif adminChoice == "9":
         log.debug("Admin is De-selected")
         print("Back to Main Menu...")
@@ -568,7 +605,6 @@ def menu():
     print("MENU:")
     print("1) Check AGENT server status")
     print("2) View External Connections")
-    print("3) Send Status to Monitor")
     print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
@@ -585,8 +621,6 @@ def myMenu():
         checkServer()
     elif choice == "2":
         viewConnections()
-    elif choice == "3":
-        sendStatus()
     elif choice == "9":
         admin_selected = True
         log.debug("Admin is Selected")

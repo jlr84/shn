@@ -202,6 +202,12 @@ def mathTest():
             print("Connection to Agent Server FAILED:\n",
                   "Is Agent listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 # Quit gracefully after terminting all child processes
@@ -229,10 +235,10 @@ def invalid(choice):
 def adminMenu():
     log.debug("Displaying admin menu")
     print("Admin Menu:")
-    print("a) Connection Test (simple math test)")
+    print("a) Connection Test with Agent (simple math test)")
     print("b) SSL Verification (verify certificates")
     print("c) STOP Monitor Server (program will exit)")
-    print("d) START* Controller Server (only if not running already)")
+    print("d) START* Monitor Server (*only if not running already)")
     print("9) BACK (return to 'Menu')")
     return input("Make a Choice\n>>> ")
 

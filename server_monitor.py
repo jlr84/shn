@@ -69,35 +69,6 @@ def reportStatus(host, status, agtAlias, ctlrid=0):
     # Disconnect from database
     db.close()
 
-#    # Connect to Agent's server daemon to confirm
-#    # registration
-#    myContext = ssl.create_default_context()
-#    myContext.load_verify_locations(config.CACERTFILE)
-#
-#    thisHost = ''.join(['https://', host, ':', str(port)])
-#
-#    with xmlrpc.client.ServerProxy(thisHost,
-#                                   context=myContext) as proxy:
-#
-#        try:
-#            log.info("Sending Confirmation...")
-#            print("Sending Confirmation...")
-#            if success:
-#                log.debug("Insert SUCCESS. [success==True]")
-#                response = proxy.confirm(config.mntrHostName,
-#                                         config.mntrServerPort,
-#                                         thisID, thisTime)
-#                log.info(response)
-#            else:
-#                log.debug("Insert FAILURE. [success==False]")
-#                response = proxy.failed(config.mntrHostName)
-#                log.info(response)
-#
-#        except ConnectionRefusedError:
-#            log.warning("Connection to Agent FAILED")
-#            print("Connection to Agent FAILED:")
-#            print("Is Agent listening? Confirm and try again.")
-#
     log.debug("End or reportStatus Function")
 
     mymsg = ''.join(["Complete; ", host,

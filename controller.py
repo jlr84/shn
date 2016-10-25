@@ -228,6 +228,12 @@ def mathTest():
             print("Connection to Agent Server FAILED:\n",
                   "Is Agent listening? Confirm connection",
                   "settings and try again.")
+            print("Settings used: '%s'" % myurl)
+
+        except:
+            log.warning("Connection to Agent Server FAILED")
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % myurl)
 
 
 # Quit gracefully after terminting all child processes
