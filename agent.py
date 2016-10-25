@@ -17,13 +17,11 @@ from logging.config import fileConfig
 fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
-# ALIAS for this Agent; change as needed
-AGENT_ALIAS = "My Identifier 1"
-
 # Global Variables -- Don't change. [No need to change.]
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
+AGENT_ALIAS = "agent"   # Default; updated to match hostname when executed
 admin_selected = False
 
 
@@ -634,7 +632,10 @@ if __name__ == '__main__':
     print("Host IP: %s" % (hostIP))
     print("Hostname: %s" % (verifyHostName))
     log.debug("PID: %d" % (pid))
-    AGENT_ALIAS = hostIP
+
+    AGENT_ALIAS = (config.agntHostName).split('.')[0]
+    log.debug("Alias: %s" % (AGENT_ALIAS))
+    print("Alias: %s" % (AGENT_ALIAS))
 
     if verifyHostName == "None":
         log.debug("Hostname not found: Returned 'None'")

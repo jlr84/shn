@@ -25,7 +25,7 @@ mntrMysqlPwd = "monitorPassword"
 
 # AGENT settings
 agntServerPort = 38000
-agntHostName = "agent.shn.local"
+agntHostName = "agent1.shn.local"
 
 
 # MySQL Settings

@@ -113,10 +113,10 @@ def controlAgent(host, port, agtAlias):
                              db=config.mysqlDB)
         cursor = db.cursor()
 
-        # Query to register agent
+        # Query to check agent
         sql = "SELECT status, timestamp FROM status WHERE "\
-              "agent = '%s' ORDER BY timestamp DESC LIMIT 1;" % \
-            (host)
+              "alias = '%s' ORDER BY timestamp DESC LIMIT 1;" % \
+            (agtAlias)
 
         log.debug("SQL Query Made [shown as follows]:")
         log.debug(sql)
@@ -125,6 +125,10 @@ def controlAgent(host, port, agtAlias):
         try:
             # Execute the SQL command
             cursor.execute(sql)
+
+            thisAnswer = 0
+            thisTime = "None"
+
             # Fetch all the rows
             results = cursor.fetchall()
             for row in results:
@@ -133,8 +137,13 @@ def controlAgent(host, port, agtAlias):
 
             log.debug("thisAnswer: %s" % thisAnswer)
             if thisAnswer == 1:
+                log.debug("Host '%s' CLEAN as of '%s'." % (host, thisTime))
                 print("Host '%s' CLEAN as of '%s'." % (host, thisTime))
+            elif thisAnswer == 0:
+                log.debug("Host NOT FOUND in status database!!")
+                print("Host NOT FOUND in status database!!")
             else:
+                log.debug("Host '%s' INFECTED!! as of '%s'." % (host, thisTime))
                 print("Host '%s' INFECTED!! as of '%s'." % (host, thisTime))
                 # TODO Make function to take appropriate action
 

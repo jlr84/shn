@@ -16,12 +16,12 @@ fileConfig('logging.conf')
 log = logging.getLogger(__name__)
 
 # ALIAS for this Agent; change as needed
-AGENT_ALIAS = "My Identifier 2"
 
 # Global Variables -- Don't change. [No need to change.]
 CERTFILE = "certs/domains/local.cert"   # Placeholder; updated when executed
 KEYFILE = "certs/domains/local.key"     # Placeholder; updated when executed
 hostIP = "localhost"                    # Default; updated when executed
+AGENT_ALIAS = "agent"   # Default; updated to match agent hostname when run
 admin_selected = False
 
 
@@ -92,18 +92,105 @@ def testConnection(remoteName=config.mntrHostName,
         print("Connection Test FAILED!")
 
 
-# Check currently-recorded status of ESM/VM
-def checkStatus():
-    log.debug("Checking current ESM/VM Status...")
-    print("TODO: Implement this!")
-    # TODO: Implement this
-
-
 # Change/Update the Monitor's connection settings
 def updateMonitor():
     log.debug("Updating Monitor connection settings")
-    print("TODO: Implement this!")
-    # TODO: Implement this
+    print("DEFAULT Monitor Hostname: 'monitor.shn.local'")
+    print("CURRENT Monitor Hostname: '%s'" % config.mntrHostName)
+    print("ENTER NEW Monitor Hostname: ['q' to keep current]")
+    tempNewHost = input(">>>")
+    if tempNewHost == 'q':
+        log.debug("No Change")
+    elif tempNewHost == 'd':
+        log.debug("Keeping Default")
+        config.mntrHostName = 'monitor.shn.local'
+    else:
+        config.mntrHostName = tempNewHost
+    print("DEFAULT Monitor Port: '36363'")
+    print("CURRENT Monitor Port: '%s'" % config.mntrServerPort)
+    print("ENTER NEW Monitor Port: ['q' to keep current]")
+    tempNewPort = input(">>>")
+    if tempNewPort == 'q':
+        log.debug("No Change")
+    elif tempNewPort == 'd':
+        log.debug("Keeping Default")
+        config.mntrServerPort = 36363
+    else:
+        config.mntrServerPort = int(tempNewPort)
+
+    print("UPDATED Monitor Saved: '%s', Port: '%d'" % (config.mntrHostName,
+                                                       config.mntrServerPort))
+    log.debug("Monitor Saved: '%s', Port: '%d'" % (config.mntrHostName,
+                                                   config.mntrServerPort))
+
+
+# Print entire stored status history
+def printHistory():
+    log.debug("Printing entire stored status history...")
+
+    currentTotal = 0
+
+    try:
+        with dbm.open('cache_esm', 'r') as db:
+            currentTotal = int((db.get('total')).decode("utf-8"))
+            log.debug("Cache found. Total Retrieved.")
+            print("Total Saved: %d" % currentTotal)
+
+    except:
+        log.debug("No cache found or read failed.")
+        print("READ FAILED or No Current Status Present")
+
+    if currentTotal > 0:
+        # Display history
+        log.debug("Current Total > 0")
+        print("[Update #]: [Update Time]     >>> [Status]")
+        for k in range(currentTotal):
+            try:
+                with dbm.open('cache_esm', 'r') as db:
+                    readstatus = "%s.status" % (k+1)
+                    readtime = "%s.time" % (k+1)
+                    thisTime = (db.get(readtime)).decode("utf-8")
+                    thisStatus = (db.get(readstatus)).decode("utf-8")
+                    if thisStatus == '1':
+                        pStatus = "CLEAN ['1']"
+                    elif thisStatus == '999':
+                        pStatus = "COMPROMISED ['999']"
+                    else:
+                        pStatus = "UNKNOWN ['???']"
+                    print("%d: %s >>> %s" % ((k+1), thisTime, pStatus))
+            except:
+                log.debug("Read Failed with Item %d!" % (k+1))
+                print("READ FAILED!")
+        print("End of History")
+        log.debug("End of History")
+
+    else:
+        log.debug("No Status. Exiting.")
+        print("No Status. Exiting.")
+
+
+# Check currently-recorded status of ESM/VM
+def checkStatus():
+    log.debug("Checking current ESM/VM Status...")
+    try:
+        with dbm.open('cache_esm', 'r') as db:
+            lastUpdate = (db.get('last_update')).decode("utf-8")
+            lastStatus = (db.get('last_status')).decode("utf-8")
+            log.debug("Cache found. Values retrieved.")
+            print("ESM/VM Status:")
+            if lastStatus == "1":
+                print("CLEAN ['1'] (as of %s)" % lastUpdate)
+                log.debug("CLEAN ['1'] (as of %s)" % lastUpdate)
+            elif lastStatus == "999":
+                print("COMPROMISED ['999'] (as of %s)" % lastUpdate)
+                log.debug("COMPROMISED ['999'] (as of %s)" % lastUpdate)
+            else:
+                print("Unknown Status!!!")
+                log.debug("Unknown Status!!!")
+
+    except:
+        log.debug("No cache found or read failed.")
+        print("READ FAILED or No Current Status Present")
 
 
 # View current monitor connection settings
@@ -149,27 +236,70 @@ def mathTest():
                   "settings and try again.")
 
 
+def logStatus(logStatus, logTime):
+    log = logging.getLogger(__name__)
+    log.debug("Saving Status: %s, at Time: %s" % (logStatus, logTime))
+    storeStatus = str(logStatus)
+    storeTime = str(logTime)
+    log.debug("Values Storing: %s, %s" % (storeStatus, storeTime))
+
+    try:
+        with dbm.open('cache_esm', 'w') as db:
+            # Get current total and add 1 with type conversions
+            newtotal = str(int((db.get('total')).decode("utf-8")) + 1)
+            # Store new total in persistent storage
+            db['total'] = newtotal
+            # Create names based on connection number
+            savestatus = "%s.status" % (newtotal)
+            savetime = "%s.time" % (newtotal)
+            # Save connection info to persistent storage
+            db[savestatus] = storeStatus
+            db[savetime] = storeTime
+            db['last_update'] = storeTime
+            db['last_status'] = storeStatus
+            log.debug("Cache found. Values stored in old cache.")
+            log.debug("Saved: %s, %s" % (storeStatus, storeTime))
+
+    except:
+        log.debug("No cache file found; creating new file.")
+        with dbm.open('cache_esm', 'c') as db:
+            db['total'] = "1"
+            savestatus = "1.status"
+            savetime = "1.time"
+            db[savestatus] = storeStatus
+            db[savetime] = storeTime
+            db['last_update'] = storeTime
+            db['last_status'] = storeStatus
+            log.debug("Saved: %s, %s" % (storeStatus, storeTime))
+
+    log.debug("End of log status function")
+
+
 # Send status update
-def sendStatus():
+def sendStatus(state=0, userInput=True):
 
     log.debug("Start of Send Status Function...")
     myContext = ssl.create_default_context()
     myContext.load_verify_locations(config.CACERTFILE)
 
-    print("Enter Current Status:")
-    print("1) CLEAN[1]")
-    print("2) Compromised[999]")
-    answer = input("Make a choice\n>>>")
-    if answer == "1":
-        mystatus = 1
-    else:
-        mystatus = 999
+    if userInput:
+        print("Enter Current Status:")
+        print("1) CLEAN ['1']")
+        print("2) COMPROMISED ['999']")
+        answer = input("Make a choice\n>>>")
+        if answer == "1":
+            mystatus = 1
+        else:
+            mystatus = 999
 
-    if mystatus == 1:
-        print("Status selected: 'CLEAN'")
+        if mystatus == 1:
+            print("Status selected: 'CLEAN'")
+        else:
+            print("Status selected: 'COMPROMISED'")
+        print("If this is incorrect, resubmit IMMEDIATELY!")
+
     else:
-        print("Status selected: 'COMPROMISED'")
-    print("If this is incorrect, resubmit IMMEDIATELY!")
+        mystatus = state
 
     myurl = ''.join(['https://', config.mntrHostName, ':',
                      str(config.mntrServerPort)])
@@ -180,6 +310,10 @@ def sendStatus():
                                           AGENT_ALIAS)
             log.debug("Response: %s" % response)
             print(response)
+            timeConfirmed = str(datetime.datetime.now())
+            log.debug("Time Confirmed: %s" % timeConfirmed)
+            logStatus(mystatus, timeConfirmed)
+            log.debug("Status Logged")
 
         except ConnectionRefusedError:
             log.warning("Connection to Monitor Server FAILED")
@@ -233,8 +367,10 @@ def adminMenu():
     print("Admin Menu:")
     print("a) Connection Test (simple math test)")
     print("b) SSL Verification (verify certificates")
-    print("c) CHANGE/UPDATE Monitor Settings")
+    print("c) View ALL Saved History")
     print("d) Delete ESM History")
+    print("e) Send Status* to Monitor [user-provided status]")
+    print("f) CHANGE/UPDATE Monitor Settings")
     print("9) BACK (return to 'Menu')")
     return input("Make a Choice\n>>> ")
 
@@ -247,9 +383,13 @@ def adminSelection():
     elif adminChoice == "b":
         verifyCerts()
     elif adminChoice == "c":
-        updateMonitor()
-    elif adminChoice() == "d":
+        printHistory()
+    elif adminChoice == "d":
         deleteHistory()
+    elif adminChoice == "e":
+        sendStatus()
+    elif adminChoice == "f":
+        updateMonitor()
     elif adminChoice == "9":
         log.debug("Admin is De-selected")
         print("Back to Main Menu...")
@@ -268,8 +408,9 @@ def menu():
     print("MENU:")
     print("1) Check current ESM status")
     print("2) View Monitor Connection Settings")
-    print("3) Send Status* to Monitor [user-provided status]")
-    print("4) Test Connection with Monitor")
+    print("3) Send 'CLEAN' Status to Monitor")
+    print("4) Send 'COMPROMISED' Status to Monitor")
+    print("5) Test Connection with Monitor")
     print("9) ADMIN MENU")
     print("q) QUIT")
     return input("Make a Choice\n>>> ")
@@ -287,8 +428,10 @@ def myMenu():
     elif choice == "2":
         viewConnection()
     elif choice == "3":
-        sendStatus()
+        sendStatus(state=1, userInput=False)
     elif choice == "4":
+        sendStatus(state=999, userInput=False)
+    elif choice == "5":
         testConnection()
     elif choice == "9":
         admin_selected = True
@@ -333,7 +476,10 @@ if __name__ == '__main__':
     pid = os.getpid()
     print("Host IP: %s" % (hostIP))
     log.debug("PID: %d" % (pid))
-    AGENT_ALIAS = hostIP
+
+    AGENT_ALIAS = (config.agntHostName).split('.')[0]
+    log.debug("Alias: %s" % (AGENT_ALIAS))
+    print("Alias: %s" % (AGENT_ALIAS))
 
     # Verify certificates present prior to displaying menu
     log.debug("Verifying certificates.")
