@@ -311,7 +311,7 @@ def masterQuitConnection(total, ids, names, ports, times):
     log.debug("Master Quit Connection Function")
     returnCode = 9999
 
-    # Get user choice of which connection to quit
+    # If more than 0 connections, determine options and then close them
     if total == 0:
         log.debug("ZERO connections; no connections to close")
         print("No connections to close.")
@@ -322,7 +322,7 @@ def masterQuitConnection(total, ids, names, ports, times):
             log.debug("%d) ID: %s; Name: %s" % ((k + 1), ids[k], names[k]))
             options.append(str(k + 1))
 
-        # Pick Connection to close
+        # Pick Connection to close >> simply start with highest number
         t = total
         log.debug("Connection t: %d" % t)
         valuePicked = False
@@ -332,13 +332,14 @@ def masterQuitConnection(total, ids, names, ports, times):
             if ports[t] == "000000":
                 t = t - 1
             else:
+                # Option is valid (i.e., not port# '000000')
                 valuePicked = True
 
-        # Close Connection if valuePicked
+        # Close Connection if valuePicked (if valid option for closing found)
         if valuePicked:
             log.debug("Value Picked: %d" % t)
 
-            # Close connection chosen by user
+            # Close connection chosen above
             myContext = ssl.create_default_context()
             myContext.load_verify_locations(config.CACERTFILE)
 
@@ -374,6 +375,7 @@ def masterQuitConnection(total, ids, names, ports, times):
     return returnCode
 
 
+# Allow user to choose which connection to close; then close
 def userQuitConnection(total, ids, names, ports, times):
     log.debug("User Quit Connection Function...")
     returnCode = 9999
@@ -495,6 +497,8 @@ def stopServer(masterQuit=False):
         else:
             t = userQuitConnection(total, ids, names, ports, times)
 
+    # If connection was closed (if connection number chosen was NOT
+    # 9999 or 111111) then remove connection from cache
     if t not in [9999, 111111]:
         # Remove connection from cache
         delName = names[t]
