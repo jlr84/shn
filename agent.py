@@ -166,7 +166,7 @@ def startServer():
     if alreadyRunning > 0:
         print("Confirm you want to start an ADDITIONAL Agent",
               "server.")
-        startConfirmation = input("Confirm YES['y'] or NO['n']:\n>>>")
+        startConfirmation = input("Confirm YES['y'] or NO['n']:\n>>> ")
 
     if startConfirmation in ["y", "Y", "YES", "yes", "Yes"]:
         # Now, start thread
@@ -272,7 +272,7 @@ def sendStatus():
     print("Enter Current Status:")
     print("1) CLEAN[1]")
     print("2) Compromised[999]")
-    answer = input("Make a choice\n>>>")
+    answer = input("Make a choice\n>>> ")
     if answer == "1":
         mystatus = 1
     else:
@@ -391,7 +391,7 @@ def userQuitConnection(total, ids, names, ports, times):
         for k in range(total):
             print("%d) ID: %s; Name: %s" % ((k + 1), ids[k], names[k]))
             options.append(str(k + 1))
-        s = input("Make a Choice\n>>>")
+        s = input("Make a Choice\n>>> ")
         t = int(s) - 1
         if s not in options:
             invalid(s)
@@ -606,7 +606,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("MENU:")
+    print("MENU[Agent]:")
     print("1) Check AGENT server status")
     print("2) View External Connections")
     print("9) ADMIN MENU")

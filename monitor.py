@@ -269,7 +269,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("\nMENU:")
+    print("\n\nMENU[Monitor]:")
     print("1) Check MONITOR server status")
     print("2) Display Current Status")
     print("9) ADMIN MENU")

@@ -298,7 +298,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("\nMENU:")
+    print("\n\nMENU[Controller]:")
     print("1) Check CONTROLLER server status")
     print("2) Display Connected Agents")
     print("3) Send Command to Agent")

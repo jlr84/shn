@@ -540,7 +540,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("MENU:")
+    print("MENU[ESM]:")
     print("1) Check current ESM status")
     print("2) View Monitor Connection Settings")
     print("3) Send 'CLEAN' Status to Monitor")
