@@ -27,6 +27,20 @@ if ! $file1 -o ! $file2 ; then
     exit
 fi
 
+# Ensure Python version 3.5 is present
+echo "--SHN-- Verifying Python 3.5 is installed..."
+PYVERSION1=$(python --version 2>&1)
+PYVERSION2=$(python3 --version 2>&1)
+echo $PYVERSION1
+echo $PYVERSION2
+
+echo "--SHN-- Your Python version(s): '$PYVERSION1' and/or '$PYVERSION2'"
+if [[ "$PYVERSION1" == "Python 3.5"* ]] || [[ "$PYVERSION2" == "Python 3.5"* ]]; then
+    echo "--SHN-- Python 3.5 Verified."
+else
+    echo "--SHN-- WARNING: SHN Requires Python 3.5! This version NOT found. If this is an error, continue. If Python 3.5 is NOT installed on your system, install prior to using SHN."	
+fi     
+
 # Update packages
 echo "--SHN-- Updating host's packages with 'apt-get update'."
 sudo apt-get update
