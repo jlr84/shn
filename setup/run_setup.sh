@@ -32,13 +32,13 @@ echo "--SHN-- Updating host's packages with 'apt-get update'."
 sudo apt-get update
 
 # Install pip | debconf
-echo "--SHN-- Installing pip & debconf-utils."
-sudo apt-get -y install python-pip debconf-utils
+echo "--SHN-- Installing pip (for python3) & debconf-utils."
+sudo apt-get -y install python3-pip debconf-utils
 
 # Install project requirements using pip (based on 'requirements.txt')
 # Note: Assumption that 'requipments.txt' is in parent directory
 echo "--SHN-- Installing project requirements using pip."
-sudo pip install -r ../requirements.txt
+sudo pip3 install -r ../requirements.txt
 
 # Install Mariadb (replacement for mysql)
 echo "--SHN-- Installing MariaDB."
