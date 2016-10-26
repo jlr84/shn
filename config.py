@@ -1,6 +1,9 @@
 '''
     System-wide global configurations for shn
-
+    NOTE: ENSURE ANY Changes made here ALSO
+    match the configurations in the mysql
+    database setup file located here:
+        ./setup/dbsetup.sql
 '''
 
 # Global Settings [same across all modules]:
@@ -10,8 +13,8 @@ CACERTFILE = "certs/ca.cert"
 
 
 # CONTROLLER settings
-ctlrServerPort = 35353                  # Declare what port the server will use
-ctlrHostName = "controller.shn.local"   # Default; VERIFIED when executed.
+ctlrServerPort = 35353
+ctlrHostName = "controller.shn.local"
 ctlrMysqlUser = 'controller_admin'
 ctlrMysqlPwd = 'controlPassword'
 
