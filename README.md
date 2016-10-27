@@ -5,7 +5,7 @@ The goal of this project is to produce a “self-healing” network (SHNet) that
 
 SHNet operation is supported by the use of a hypervisor and virtualized user desktop (VUD) for each [user, non-server] end-host within the network. This structure allows each end-user to operate a virtualized desktop, while SHNet-related communication remains at the hypervisor level, one layer below the end-user. 
 
-This project consists of four main components: A (1) Monitor node receives regular updates from each VUD operated on the network via an (2) End-host Security Monitor (ESM) running on each VUD. The ESM identifies the associated health/security status of the VUD as either 'CLEAN' or 'COMPROMISED' and transmits this status to the Monitor node. (Note: In this project the ESM is simply simulating the detection of a compromised end-host, whereas a full-fledged commercial product would be used in a real-world setting.) A (3) Controller node reads the network health/security status maintained by the Monitor and takes action as necessary to mitigate any concerns. The Controller takes necessary action by communicating with an (4) SHNet Agent running at the hypervisor level of each end-host. By communicating with the Agent, the Controller takes action to restore, snapshot, or otherwise roll-back each VUD to a time-period prior to suspected compromise.
+This project consists of four main components: A **Monitor** node receives regular updates from each VUD operated on the network via an **End-host Security Monitor (ESM)** running on each VUD. The ESM identifies the associated health/security status of the VUD as either 'CLEAN' or 'COMPROMISED' and transmits this status to the Monitor node. (Note: In this project the ESM is simply simulating the detection of a compromised end-host, whereas a full-fledged commercial product would be used in a real-world setting.) A **Controller** node reads the network health/security status maintained by the Monitor and takes action as necessary to mitigate any concerns. The Controller takes necessary action by communicating with an **SHNet Agent** running at the hypervisor level of each end-host. By communicating with the Agent, the Controller takes action to restore, snapshot, or otherwise roll-back each VUD to a time-period prior to suspected compromise.
 
 ## Getting Started
 
@@ -123,7 +123,7 @@ http://askubuntu.com/questions/680824/how-do-i-update-python-from-3-4-3-to-3-5
 ### Xen Project Hypervisor Install
 
 (1) Start install of Ubuntu 16.04 (on a physical computer)
-* Burn the above-reference .iso to DVD; 
+* Burn the above-referenced .iso to DVD; 
 * Insert into DVD drive; 
 * Restart computer and follow directions to start the installation.
 
