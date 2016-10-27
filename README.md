@@ -1,4 +1,5 @@
-# SHNet (Self-healing Network) Project [GA Tech CS6266, Fall 2016]
+# SHNet (Self-healing Network) Project 
+## [GA Tech CS6266, Fall 2016]
 
 The goal of this project is to produce a “self-healing” network (SHNet) that provides the capability to automatically respond to and remediate security vulnerabilities detected among end-host systems within the network.
 
