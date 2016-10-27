@@ -16,10 +16,10 @@ These instructions will get you a copy of the project up and running on your loc
 Unless stated specifically elsewhere, for individual components, this project requires:
 
 (1) Ubuntu 16.04 LTS
-```
+
 Download and install from the Ubuntu website:
 http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso
-```
+
 
 (2) Python 3.5
 
