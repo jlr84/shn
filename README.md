@@ -17,25 +17,22 @@ Unless stated specifically elsewhere, for individual components, this project re
 
 (1) Ubuntu 16.04 LTS
 
-Download and install from the Ubuntu website:
+Download and install from the Ubuntu website:  
 http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso
 
 
 (2) Python 3.5
 
-```
-Download and install from the Python website: 
-https://www.python.org/ftp/python/3.5.2/Python-3.5.2.tar.xz
+Download and install from the Python website:    
+https://www.python.org/ftp/python/3.5.2/Python-3.5.2.tar.xz   
 (See 'Additional References' for more detail.)
-```
+
 
 (3) Xen Project Hypervisor 
-```
-Reference the Xen Project website and the Ubuntu Xen community page:
-https://www.xenproject.org/
-https://help.ubuntu.com/community/Xen
+Reference the Xen Project website and the Ubuntu Xen community page:   
+https://www.xenproject.org/   
+https://help.ubuntu.com/community/Xen   
 (See 'Additional References' for more detail.)
-```
 
 
 ### Installing
@@ -126,9 +123,9 @@ http://askubuntu.com/questions/680824/how-do-i-update-python-from-3-4-3-to-3-5
 ### Xen Project Hypervisor Install
 
 (1) Start install of Ubuntu 16.04 (on a physical computer)
-```
-Burn the above-reference .iso to DVD; insert into DVD drive; restart computer and follow directions to start the installation.
-```
+* Burn the above-reference .iso to DVD; 
+* Insert into DVD drive; 
+* Restart computer and follow directions to start the installation.
 
 (2) DURING install, for the partitioning method choose "Guided - use the entire disk and setup LVM."
 
