@@ -39,7 +39,7 @@ https://help.ubuntu.com/community/Xen
 These instructions will get you a copy of the project up and running on your local machine -- with some limitations, mentioned below -- for development and testing purposes. Continue with the deployment section folling these steps for notes on how to reconfigure the project for full functionality.
 
 **Step 1: Install Ubuntu 16.04 LTS**   
-(See 'Installing Ubuntu 16.04 LTS,' below, for more detail.)
+(See 'Installing Ubuntu 16.04 LTS,' below under 'Additional References', for more detail.)
 
 **Step 2: Install Git**
 ```
