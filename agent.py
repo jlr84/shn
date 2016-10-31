@@ -289,20 +289,20 @@ def sendStatus():
     with xmlrpc.client.ServerProxy(myurl,
                                    context=myContext) as proxy:
         try:
-            response = proxy.reportStatus(agntHostName, mystatus,
-                                          agntServerPort, AGENT_ALIAS)
+            response = proxy.reportStatus(config.agntHostName, mystatus,
+                                          AGENT_ALIAS)
             log.debug("Update status response: %s" % response)
             print(response)
 
         except ConnectionRefusedError:
-            log.warning("Connection to Controller Server FAILED")
-            print("Connection to Controller Server FAILED:\n",
-                  "Is Controller listening? Confirm connection",
+            log.warning("Connection to Monitor Server FAILED")
+            print("Connection to Monitor Server FAILED:\n",
+                  "Is Monitor listening? Confirm connection",
                   "settings and try again.")
             print("Settings used: '%s'" % myurl)
 
         except:
-            log.warning("Connection to Controller FAILED")
+            log.warning("Connection to Monitor FAILED")
             print("Connection Failed. Suspected incorrect URL.")
             print("Settings used: '%s'" % myurl)
 
@@ -550,7 +550,10 @@ def myQuit():
 
     # Delete agent cache file
     log.debug("Deleting Agent Cache File")
-    os.remove("cache_agent")
+    try:
+        os.remove("cache_agent")
+    except:
+        log.debug("Error deleting 'cache_agent' file")
     print("Agent Exiting. Goodbye.\n")
     raise SystemExit
 
