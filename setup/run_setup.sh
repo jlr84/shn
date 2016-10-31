@@ -50,8 +50,8 @@ echo "--SHN-- Installing pip (for python3) & debconf-utils."
 sudo apt-get -y install python3-pip debconf-utils
 
 # Install packages required for https
-echo "--SHN-- Installing crypto-related packages."
-sudo apt-get -y install build-essential libssl-dev libffi-dev python-dev
+#echo "--SHN-- Installing crypto-related packages."
+#sudo apt-get -y install build-essential libssl-dev libffi-dev python-dev
 
 # Install project requirements using pip (based on 'requirements.txt')
 # Note: Assumption that 'requipments.txt' is in parent directory

@@ -39,19 +39,45 @@ https://help.ubuntu.com/community/Xen
 
 These instructions will get you a copy of the project up and running on your local machine -- with some limitations, mentioned below -- for development and testings purposes. Continue with the deployment section folling these steps for notes on how reconfigure the project for full functionality.
 
-TODO: Say what the step will be
+**Step 1: Install Ubuntu 16.04 LTS** (See 'Installing Ubuntu 16.04 LTS,' below, for more detail.)
 
+**Step 2: Install Git**
 ```
-Give the example
-```
-
-And repeat
-
-```
-until finished
+$ sudo apt-get install git
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+**Step 3: Clone the SHNet Repository**
+```
+$ git clone https://github.com/jlr84/shn.git
+```
+
+**Step 4: Complete the following to finish the basic install.**
+Note, the two configuration files are:
+* shn/config.py
+* shn/setup/dbsetup.sql
+
+If you make any changes to the default settings, ensure your changes match in both files, as required.  
+
+Change Directory to the setup folder, and execute 'run_setup.sh' to begin setup.
+
+```
+$ cd shn/setup;
+
+$ ./run_setup.sh
+```
+
+Initial Setup is complete, which included:
+* Installing necessary packages
+* Installing packages included in requirements.txt (using pip3)
+* Installing MariaDB
+* Configuring MariaDB: Database, Tables, and users required for SHN
+* Configuring '/etc/hosts' file for default SHN setup
+
+**Step 5: Verify Install**  
+This is step-by step example to ensure everything is operating as expected: 
+```
+TODO -- Add This
+```
 
 ## Running the tests
 
@@ -97,6 +123,24 @@ This project is licensed under the MIT License - see the [LICENSE.md](License.md
 
 
 ## Additional References
+
+### Installing Ubuntu 16.04 LTS
+
+(1) Option 1: Install on your host machine.
+
+(2) Option 2: Install as a virtual machine inside a Type-2 Hypervisor (such as VirtualBox).
+
+(3) I used 'Option 2', with the following information provided as additional detail: 
+* My host computer is a Windows 10 64-bit, with an 8-core, 2.80GHz processor, and 32GB RAM
+* I used [VirtualBox](https://www.virtualbox.org/wiki/Downloads) as my hypervisor. (See their website for install instructions.)
+* I downloaded the above-referenced [Ubuntu 16.04 LTS iso](http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso) and installed this fresh inside VirtualBox using the following configuration: 16GB RAM, 1 CPU, and 1 Bridged Adapter installed (all other selections as 'default' options).
+* Start the VM, install the OS. 
+* After install, perform an update to ensure all the latest updates are applied. 
+
+```
+sudo apt-get update 	# Fetches the list of availble updates
+sudo apt-get upgrade	# Upgrades the current packages
+```
 
 ### Installing Python 3.5
 
