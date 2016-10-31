@@ -83,17 +83,18 @@ def controlAgent(host, port, agtAlias):
 
         try:
             log.info("Sending Confirmation...")
-            print("Sending Confirmation...")
             if success:
                 log.debug("Insert SUCCESS. [success==True]")
                 response = proxy.confirm(config.ctlrHostName,
                                          config.ctlrServerPort,
                                          thisID, thisTime)
                 log.info(response)
+                print("Connection to Agent ESTABLISHED")
             else:
                 log.debug("Insert FAILURE. [success==False]")
                 response = proxy.failed(config.ctlrHostName)
                 log.info(response)
+                print("Connection to Agent FAILED")
 
         except ConnectionRefusedError:
             log.warning("Connection to Agent FAILED")

@@ -335,6 +335,8 @@ def sendStatus(state=0, userInput=True):
             if userInput:
                 print("Response from Monitor: %s" % response)
             timeConfirmed = str(datetime.datetime.now())
+            print("Status '%s' Sent to Monitor; Confirmed at %s." % (mystatus,
+                                                                     timeConfirmed))
             log.debug("Time Confirmed: %s" % timeConfirmed)
             logStatus(mystatus, timeConfirmed)
             log.debug("Status Logged")
@@ -499,7 +501,7 @@ def invalid(choice):
 
 def adminMenu():
     log.debug("Displaying admin menu")
-    print("Admin Menu:")
+    print("\nAdmin Menu:")
     print("a) Connection Test (simple math test)")
     print("b) SSL Verification (verify certificates")
     print("c) View ALL Saved History")
@@ -540,7 +542,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("MENU[ESM]:")
+    print("\n\nMENU[ESM]:")
     print("1) Check current ESM status")
     print("2) View Monitor Connection Settings")
     print("3) Send 'CLEAN' Status to Monitor")
@@ -688,6 +690,7 @@ if __name__ == '__main__':
     # Verify certificates present prior to displaying menu
     log.debug("Verifying certificates.")
     verifyCerts()
+    time.sleep(2)
 
     # If NOT simulation mode, dispaly menu [repeatedly] for user
     if not args.simulation:

@@ -260,7 +260,7 @@ def invalid(choice):
 
 def adminMenu():
     log.debug("Displaying admin menu")
-    print("Admin Menu:")
+    print("\nAdmin Menu:")
     print("a) Connection Test (simple math test)")
     print("b) SSL Verification (verify certificates")
     print("c) STOP Controller Server (program will exit)")
@@ -355,6 +355,7 @@ if __name__ == '__main__':
 
         # Starting Server
         startServer()
+        time.sleep(2)
 
         # Display Menu [repeatedly] for user
         while True:

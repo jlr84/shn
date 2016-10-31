@@ -73,11 +73,129 @@ Initial Setup is complete, which included:
 * Configuring MariaDB: Database, Tables, and users required for SHN
 * Configuring '/etc/hosts' file for default SHN setup
 
+Recommendation: Change mysql root password, as this is no longer needed for SHNet. (Non-root mysql users with limited privileges were created in the install script for use by SHNet.) The last two output lines from the 'run_setup.sh' script display the current root password so you can change it as desired.
+
 **Step 5: Verify Install**  
-This is step-by step example to ensure everything is operating as expected: 
+This is step-by step example to ensure everything is operating as expected:  
+
+OPEN four (4) different terminals (change directory to the 'shn/' folder in each terminal).
+
+**TERMINAL 1**
+Start the CONTROLLER.
 ```
-TODO -- Add This
+$ python3 controller.py
+
+Host IP: 1##.##.##.112
+Hostname: controller.shn.local
+Certfiles Verified Present.
+Server listening on port 35353.
+
+
+MENU[Controller]:
+1) Check CONTROLLER server status
+2) Display Connected Agents
+3) Send Command to Agent
+9) ADMIN MENU
+q) QUIT
+Make a Choice
+>>> 
 ```
+
+**TERMINAL 2**
+Start the MONITOR.
+```
+$ python3 monitor.py 
+Host IP: 1##.##.##.112
+Hostname: controller.shn.local
+Certfiles Verified Present.
+Server listening on port 36363.
+
+
+MENU[Monitor]:
+1) Check MONITOR server status
+2) Display Current Status
+9) ADMIN MENU
+q) QUIT
+Make a Choice
+>>> 
+```
+
+**TERMINAL 3**
+Start the AGENT. 
+```
+$ python3 agent.py controller.shn.local
+Using controller hostname: 'controller.shn.local'
+Host IP: 1##.##.##.112
+Alias: agent1
+Certfiles Verified Present
+Server listening on port 38000...
+Register with controller: Registering Agent 'agent1.shn.local'...
+Registration Acknowledged (ID#1)
+1##.##.##.112 - - [31/Oct/2016 13:20:30] "POST /RPC2 HTTP/1.1" 200 -
+
+
+MENU[Agent]:
+1) Check AGENT server status
+2) View External Connections
+9) ADMIN MENU
+q) QUIT
+Make a Choice
+>>> 
+```
+When the Agent starts, it will connect to the CONTROLLER and establish/register a connection from the Controller to the Agent. After the Agent is started in Terminal 3, you will see the following in Terminal 1 if the connection is successful:
+```
+1##.##.##.112 - - [31/Oct/2016 13:26:26] "POST /RPC2 HTTP/1.1" 200 -
+ControlAgent Daemon Started
+Connection to Agent ESTABLISHED
+```
+
+**TERMINAL 4**
+Start the ESM.
+```
+$ python3 esm.py 
+Using default monitor hostname: monitor.shn.local
+Using default monitor port#: 36363
+Using alias: agent1
+Host IP: 172.31.31.112
+Certfiles Verified Present
+
+
+MENU[ESM]:
+1) Check current ESM status
+2) View Monitor Connection Settings
+3) Send 'CLEAN' Status to Monitor
+4) Send 'COMPROMISED' Status to Monitor
+5) Start BASIC Simulation [in background]
+6) Test Connection with Monitor
+9) ADMIN MENU
+q) QUIT
+Make a Choice
+>>> 
+```
+
+Select Choice '3' to report 'CLEAN' status to the monitor; then select Choice '1' to view the 
+```
+>>> 3
+Status '1' Sent to Monitor; Confirmed at 2016-10-31 14:08:52.108358.
+```
+```
+>>> 1
+ESM/VM Status:
+CLEAN ['1'] (as of 2016-10-31 14:08:52.108358)
+```
+After selecting Choice '3', the ESM will send the current status to the Monitor. The Controller will read this updated status from the list maintained by the Monitor. As such, in Terminal 1 you will see the following at this point:
+```
+Host NOT FOUND in status database!! 	# This will display PRIOR TO the ESM sending it's first status
+Host NOT FOUND in status database!!
+Host 'agent1.shn.local' CLEAN as of '2016-10-31 14:02:34'.	# This will display after.
+```
+
+If all of the above worked successfully, the SHNet local install is confirmed successful at this point.  
+
+Running SHNet in this configuration will work for development and (basic) testing; however, full functionality is not present. These are the main limitations of this, limited, install:
+* The Agent Module is NOT running within a Xen-based hypervisor. This results in any functionality related to actually controlling VUD's (VMs) being non-functional. 
+* The ESM Module is NOT running inside a VUD, as designed and described above. Correct implementation would include the ESM automatically running upon the start of each VUD. 
+
 
 ## Running the tests
 

@@ -562,7 +562,7 @@ def invalid(choice):
 
 def adminMenu():
     log.debug("Displaying admin menu")
-    print("Admin Menu:")
+    print("\nAdmin Menu:")
     print("a) Connection Test (simple math test)")
     print("b) SSL Verification (verify certificates")
     print("c) STOP/Disconnect Agent Server")
@@ -606,7 +606,7 @@ def adminSelection():
 
 def menu():
     log.debug("Displaying menu")
-    print("MENU[Agent]:")
+    print("\n\nMENU[Agent]:")
     print("1) Check AGENT server status")
     print("2) View External Connections")
     print("9) ADMIN MENU")
@@ -645,7 +645,7 @@ if __name__ == '__main__':
     # if too many exit, if provided use provided
     if len(sys.argv) == 2:
         log.debug("Using controller hostname: %s" % (sys.argv[1]))
-        print("Using controller hostname: \n%s" % (sys.argv[1]))
+        print("Using controller hostname: '%s'" % (sys.argv[1]))
         config.ctlrHostName = sys.argv[1]
 
     else:
@@ -668,7 +668,7 @@ if __name__ == '__main__':
     verifyHostName = findHostName(hostIP)
     pid = os.getpid()
     print("Host IP: %s" % (hostIP))
-    print("Hostname: %s" % (verifyHostName))
+    log.debug("Hostname: %s" % (verifyHostName))
     log.debug("PID: %d" % (pid))
 
     AGENT_ALIAS = (config.agntHostName).split('.')[0]
@@ -691,6 +691,7 @@ if __name__ == '__main__':
         # Start Agent's Listening Server
         log.debug("Starting agent listening server...")
         startServer()
+        time.sleep(2)
 
         # Display Menu [repeatedly] for user
         while True:

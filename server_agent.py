@@ -116,6 +116,7 @@ def confirm(name, port, idnum, time):
                                                  storeID, storeTime))
 
     returnMessage = ''.join(["Conf# ", str(idnum), " Acknowledged."])
+    print("Registration Acknowledged (ID#%d)" % (idnum))
     return returnMessage
 
 
