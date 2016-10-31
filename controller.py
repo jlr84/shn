@@ -12,7 +12,7 @@ import logging
 from logging.config import fileConfig
 
 # Load logging config
-fileConfig('logging.conf')
+fileConfig('setup/logging.conf')
 log = logging.getLogger(__name__)
 
 
