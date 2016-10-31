@@ -60,8 +60,8 @@ sudo -H pip3 install -r ../requirements.txt
 
 # Install Mariadb (replacement for mysql)
 echo "--SHN-- Installing MariaDB."
-sudo debconf-set-selections <<< 'mariadb-server mysql-server/root_password password rootpass'
-sudo debconf-set-selections <<< 'mariadb-server mysql-server/root_password_again password rootpass'
+sudo debconf-set-selections <<< 'mariadb-server mysql-server/root_password password $ROOTPWD'
+sudo debconf-set-selections <<< 'mariadb-server mysql-server/root_password_again password $ROOTPWD'
 sudo apt-get -y install mariadb-server
 
 
@@ -79,12 +79,12 @@ END
 
 # Permform sql queries to secure MySQL
 echo "--SHN-- Performing 'mysql_secure_installation' queries."
-echo $SQL | mysql -uroot -p$ROOTPWD
+echo $SQL | sudo mysql -uroot -p$ROOTPWD
 
 
 # Execute mysql initial SHN setup
 echo "--SHN-- Configuring MariaDB (MySQL) for SHN; adding database, tables, users."
-cat dbsetup.sql | mysql -uroot -p$ROOTPWD
+cat dbsetup.sql | sudo mysql -uroot -p$ROOTPWD
 echo "--SHN-- MariaDB (MySQL) SHN Configuration Complete."
 
 
