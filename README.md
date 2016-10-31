@@ -9,12 +9,11 @@ This project consists of four main components: A **Monitor** node receives regul
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine --with some limitations, mentioned below -- for development and testing purposes. See deployment section for notes on how to deploy the project for full functionality.
+These instructions will get you a copy of the project up and running on your local machine -- with some limitations, mentioned below -- for development and testing purposes. See deployment section for notes on how to deploy the project for full functionality.
 
 ### Prerequisites
 
-Unless stated specifically elsewhere, for individual components, this project requires:
-
+Unless stated specifically elsewhere (for individual components) this project requires:  
 (1) Ubuntu 16.04 LTS
 
 Download and install from the Ubuntu website:  
@@ -37,9 +36,10 @@ https://help.ubuntu.com/community/Xen
 
 ### Installing
 
-These instructions will get you a copy of the project up and running on your local machine -- with some limitations, mentioned below -- for development and testings purposes. Continue with the deployment section folling these steps for notes on how reconfigure the project for full functionality.
+These instructions will get you a copy of the project up and running on your local machine -- with some limitations, mentioned below -- for development and testing purposes. Continue with the deployment section folling these steps for notes on how to reconfigure the project for full functionality.
 
-**Step 1: Install Ubuntu 16.04 LTS** (See 'Installing Ubuntu 16.04 LTS,' below, for more detail.)
+**Step 1: Install Ubuntu 16.04 LTS**   
+(See 'Installing Ubuntu 16.04 LTS,' below, for more detail.)
 
 **Step 2: Install Git**
 ```
@@ -51,7 +51,7 @@ $ sudo apt-get install git
 $ git clone https://github.com/jlr84/shn.git
 ```
 
-**Step 4: Complete the following to finish the basic install.**
+**Step 4: Complete the following to finish the basic install.**  
 Note, the two configuration files are:
 * shn/config.py
 * shn/setup/dbsetup.sql
@@ -67,20 +67,20 @@ $ ./run_setup.sh
 ```
 
 Initial Setup is complete, which included:
-* Installing necessary packages
-* Installing packages included in requirements.txt (using pip3)
-* Installing MariaDB
-* Configuring MariaDB: Database, Tables, and users required for SHN
-* Configuring '/etc/hosts' file for default SHN setup
+* Install of necessary supporting packages
+* Install of all packages included in requirements.txt
+* Install of MariaDB
+* Configuration of MariaDB: Database, Tables, and users required for SHN were added/created/updated.
+* Configuration of '/etc/hosts' file for default SHN setup
 
-Recommendation: Change mysql root password, as this is no longer needed for SHNet. (Non-root mysql users with limited privileges were created in the install script for use by SHNet.) The last two output lines from the 'run_setup.sh' script display the current root password so you can change it as desired.
+Recommendation: Change mysql root password, as this is not needed after this point of the SHNet installation. (Non-root mysql users with limited privileges were created in the install script for use by SHNet.) The last two output lines from the 'run_setup.sh' script display the current root password so you can change it as desired.
 
 **Step 5: Verify Install**  
-This is step-by step example to ensure everything is operating as expected:  
+This is a step-by step example that will verify everything is operating as expected:  
 
 OPEN four (4) different terminals (change directory to the 'shn/' folder in each terminal).
 
-**TERMINAL 1**
+**TERMINAL 1**  
 Start the CONTROLLER.
 ```
 $ python3 controller.py
@@ -101,7 +101,7 @@ Make a Choice
 >>> 
 ```
 
-**TERMINAL 2**
+**TERMINAL 2**  
 Start the MONITOR.
 ```
 $ python3 monitor.py 
@@ -120,7 +120,7 @@ Make a Choice
 >>> 
 ```
 
-**TERMINAL 3**
+**TERMINAL 3**  
 Start the AGENT. 
 ```
 $ python3 agent.py controller.shn.local
@@ -149,7 +149,7 @@ ControlAgent Daemon Started
 Connection to Agent ESTABLISHED
 ```
 
-**TERMINAL 4**
+**TERMINAL 4**  
 Start the ESM.
 ```
 $ python3 esm.py 
@@ -185,15 +185,16 @@ CLEAN ['1'] (as of 2016-10-31 14:08:52.108358)
 ```
 After selecting Choice '3', the ESM will send the current status to the Monitor. The Controller will read this updated status from the list maintained by the Monitor. As such, in Terminal 1 you will see the following at this point:
 ```
-Host NOT FOUND in status database!! 	# This will display PRIOR TO the ESM sending it's first status
-Host NOT FOUND in status database!!
-Host 'agent1.shn.local' CLEAN as of '2016-10-31 14:02:34'.	# This will display after.
+Host NOT FOUND in status database!! 	# This will display PRIOR TO the ESM sending its first status
+Host 'agent1.shn.local' CLEAN as of '2016-10-31 14:02:34'.	# This will display after the status is sent.
 ```
 
 If all of the above worked successfully, the SHNet local install is confirmed successful at this point.  
 
-Running SHNet in this configuration will work for development and (basic) testing; however, full functionality is not present. These are the main limitations of this, limited, install:
-* The Agent Module is NOT running within a Xen-based hypervisor. This results in any functionality related to actually controlling VUD's (VMs) being non-functional. 
+Running SHNet in this configuration will work for development and (basic) testing; however, full functionality is not present.  
+
+These are the main limitations of this, limited, install:  
+* The Agent Module is NOT running within a Xen-based hypervisor. This results in any functionality related to actually controlling VUD's (VMs) **being non-functional**. 
 * The ESM Module is NOT running inside a VUD, as designed and described above. Correct implementation would include the ESM automatically running upon the start of each VUD. 
 
 
@@ -251,8 +252,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](License.md
 (3) I used 'Option 2', with the following information provided as additional detail: 
 * My host computer is a Windows 10 64-bit, with an 8-core, 2.80GHz processor, and 32GB RAM
 * I used [VirtualBox](https://www.virtualbox.org/wiki/Downloads) as my hypervisor. (See their website for install instructions.)
-* I downloaded the above-referenced [Ubuntu 16.04 LTS iso](http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso) and installed this fresh inside VirtualBox using the following configuration: 16GB RAM, 1 CPU, and 1 Bridged Adapter installed (all other selections as 'default' options).
-* Start the VM, install the OS. 
+* I downloaded the above-referenced [Ubuntu 16.04 LTS iso](http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso) and installed this fresh inside VirtualBox using the following configuration: 16GB RAM, 1 CPU, and 1 Network Adapter installed (set as a 'Bridged Adapter'). All other selections used the 'default' options.
+* Start the VM; install the OS. 
 * After install, perform an update to ensure all the latest updates are applied. 
 
 ```
