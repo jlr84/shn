@@ -40,9 +40,8 @@ def sendStart(host, port):
 
         try:
             log.info("Sending Command: 'Start'")
-            response = proxy.startVM()
+            response = proxy.startVM("start")
             log.info(response)
-            print("VUD STARTED")
 
         except ConnectionRefusedError:
             log.warning("Connection to Agent FAILED")
@@ -75,9 +74,8 @@ def sendStop(host, port):
 
         try:
             log.info("Sending Command: 'Stop'")
-            response = proxy.stopVM()
+            response = proxy.stopVM("stop")
             log.info(response)
-            print("VUD Shutdown")
 
         except ConnectionRefusedError:
             log.warning("Connection to Agent FAILED")
