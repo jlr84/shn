@@ -35,8 +35,6 @@ agntHostName = "agent1.shn.local"
 mysqlHost = 'localhost'
 mysqlPort = 3306
 mysqlDB = "shn_database"
-mysqlRootUser = 'root'
-mysqlRootPwd = 'J1051006'
 
 
 # SYSTEM-WIDE Variables -- DO NOT CHANGE
