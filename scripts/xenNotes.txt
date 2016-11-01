@@ -1,0 +1,29 @@
+CLONE VM
+
+Step 1: Create new LVS Partition (named 'vud2')
+$ sudo lvcreate -L 10G -n vud2 /dev/xen1
+
+Verify Created with:
+$ sudo lvs
+
+
+Step 2: Shutdown lvs if in use
+$ sudo xl shutdown vud1
+
+
+Step 3: Copy OLD Disk (vud1) to NEW Disk (vud2)
+$ sudo dd if=/dev/xen1/vud1 of=/dev/xen1/vud2 bs=32768
+
+
+Step 4: Create config file to use new lvs disk
+a) Copy old config to new config
+$ sudo cp vud1.cfg vud2.cfg
+
+b) Swap old name (vud1) for new name (vud2)
+$ grep -rl "vud1" ./vud2.cfg |xargs sudo sed -i "s/vud1/vud2/g"
+
+
+Step 5: Start Old lvs back up. (New remains as clone.) 
+$ sudo xl create -c /etc/xen/vud1.cfg
+
+
