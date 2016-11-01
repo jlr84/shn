@@ -25,40 +25,54 @@ def divide(x, y):
     return x/y
 
 
-def startVM():
+def startVM(key):
     log = logging.getLogger(__name__)
     log.debug("Starting up VM...")
-    rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud1.cfg",
-                         shell=True)
-    result = "999"
-    if rc == 0:
-        result = "Success"
-    elif rc == 1:
-        result = "Failed"
-        print("Starting VM... FAILED")
-        print("Is the Agent running as root/sudo as required?")
-    else:
-        result = "Failed"
-        log.debug("Starting VM: %s." % result)
+    result = "NO ACTION TAKEN"
+
+    if key == "start":	
+        rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud2.cfg",
+                             shell=True)
+        result = "999"
+        if rc == 0:
+            result = "Success"
+        elif rc == 1:
+            result = "Failed"
+            print("Starting VM... FAILED")
+            print("Is the Agent running as root/sudo as required?")
+        else:
+            result = "Failed"
+            log.debug("Starting VM: %s." % result)
+
+    else: 
+        log.debug("Key incorrect. Received: %s" % key)
+
     return "Starting VM: %s." % result
 
 
-def stopVM():
+def stopVM(key):
     log = logging.getLogger(__name__)
     log.debug("Stopping VM...")
-    rc = subprocess.call("/usr/sbin/xl shutdown ubud1", shell=True)
-    result = 999
-    if rc == 0:
-        result = "Success"
-    elif rc == 1:
-        result = "Failed"
-        print("Stopping VM... FAILED")
-        print("Is the Agent running as root/sudo as required?")
-    else:
-        result = "Failed"
-        print("Stopping VM... FAILED")
+    result = "NO ACTION TAKEN"
 
-    log.debug("Stopping VM %s." % result)
+    if key == "stop":	
+        rc = subprocess.call("/usr/sbin/xl shutdown ubud2", shell=True)
+        result = 999
+        if rc == 0:
+            result = "Success"
+        elif rc == 1:
+            result = "Failed"
+            print("Stopping VM... FAILED")
+            print("Is the Agent running as root/sudo as required?")
+        else:
+            result = "Failed"
+            print("Stopping VM... FAILED")
+
+        log.debug("Stopping VM %s." % result)
+    
+    else: 
+        log.debug("Key incorrect. Received: %s" % key)
+    
     return "Shutting down VM: %s." % result
 
 
@@ -173,6 +187,8 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(divide, 'divide')
         server.register_function(confirm, 'confirm')
         server.register_function(failed, 'failed')
+        server.register_function(startVM, 'startVM')
+        server.register_function(stopVM, 'stopVM')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))
