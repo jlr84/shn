@@ -9,6 +9,92 @@ import time
 
 
 #####################################################
+# Commands available for controlling remote VMs/VUDs
+#####################################################
+# Display the choice list for user to pick command
+def displayCommandList():
+    log = logging.getLogger(__name__)
+    log.debug("Displaying Command List...")
+    print("Available Options:")
+    print("1) Start VUD")
+    print("2) Shutdown VUD")
+    print("3) Pause VUD")
+    print("4) Take a Snapshot")
+    print("5) Perform Complete Backup")
+    print("6) Restore from Backup")
+
+
+# Function for requesting START of VM
+def sendStart(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Send Start Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Start'")
+            response = proxy.startVM()
+            log.info(response)
+            print("VUD STARTED")
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
+# Function for requesting STOP of VM
+def sendStop(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Send Stop Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Stop'")
+            response = proxy.stopVM()
+            log.info(response)
+            print("VUD Shutdown")
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
+#####################################################
 # Main Logic for Controller communicating to Agent(s)
 #####################################################
 def controlAgent(host, port, agtAlias):

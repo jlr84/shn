@@ -136,9 +136,10 @@ def startControlAgent(hostName, portNum):
 
 
 # Display Agents currently connected
-def displayAgents():
+def displayAgents(shortList=False):
     log.debug("Displaying agents now")
-    print("Displaying agents currently connected...")
+    if not shortList:
+        print("Displaying agents currently connected...")
     # Connect to database to query agents
     log.debug("Connecting to database")
     db = pymysql.connect(host=config.mysqlHost, port=config.mysqlPort,
@@ -150,6 +151,7 @@ def displayAgents():
     sql = "SELECT distinct host FROM agents;"
 
     hosts = []
+    savedResults = []
 
     # Get hosts
     try:
@@ -166,7 +168,10 @@ def displayAgents():
     except:
         log.exception("ERROR in db query>> %s" % sql)
 
-    print("FOUND %d agent(s) connected.\n" % len(hosts))
+    if shortList:
+        log.debug("FOUND %d agent(s) connected." % len(hosts))
+    else:
+        print("FOUND %d agent(s) connected." % len(hosts))
 
     # Query to retrieve each host's data
     for k in range(len(hosts)):
@@ -180,18 +185,26 @@ def displayAgents():
             cursor.execute(sql)
             # Fetch all the rows in a list of lists
             results = cursor.fetchall()
-            print("Agent #%d" % (k + 1))
+            savedResults.append(results)
+            if not shortList:
+                print("Agent #%d" % (k + 1))
             for row in results:
                 thisHost = row[0]
                 thisPort = row[1]
                 thisTime = row[2]
                 thisAlias = row[3]
                 thisID = row[4]
-            print("Host: %s" % thisHost)
-            print("Alias: %s" % thisAlias)
-            print("Port: %s" % thisPort)
-            print("Time Connected: %s" % thisTime)
-            print("ID Number: %s\n" % thisID)
+
+            if shortList:
+                print("%d) Host: %s; Alias: %s; ID: %s" % ((k+1), thisHost,
+                                                           thisAlias, thisID))
+            else:
+                print("Host: %s" % thisHost)
+                print("Alias: %s" % thisAlias)
+                print("Port: %s" % thisPort)
+                print("Time Connected: %s" % thisTime)
+                print("ID Number: %s\n" % thisID)
+
             log.debug("Host %d Displayed" % (k + 1))
 
         except:
@@ -200,12 +213,44 @@ def displayAgents():
     # Disconnect from database
     db.close()
 
+    return savedResults
+
+
+# Select which function to call based on command selected
+def processCommand(numSelected, thisHost, thisPort):
+    # TODO Finish this
+    log.debug("Processing command...")
+    if numSelected == "1":
+        rsp = myServer.sendStart(thisHost, thisPort)
+        log.debug("Num1 Response: %s" % rsp)
+    elif numSelected == "2":
+        rsp = myServer.sendStop(thisHost, thisPort)
+        log.debug("Num2 Response: %s" % rsp)
+    else:
+        print("Functionality NOT implemented or BAD selection.")
+
 
 # Send command to Agent manually
 def sendCommand():
     log.debug("Send Command to Agent -- Menu.")
-    # TODO Finish this
-    print("TODO: Provide options of commands to send...")
+    print("Send a command to which Agent?")
+    hostOptions = displayAgents(shortList=True)
+    selection1 = input("Select a number:\n>>> ")
+
+    print("You selected Agent #%s" % selection1)
+    hostSelected = hostOptions[(int(selection1) - 1)][0][0]
+    portSelected = hostOptions[(int(selection1) - 1)][0][1]
+    print("Host: %s; Port: %s" % (hostSelected, portSelected))
+    log.debug(hostOptions[(int(selection1) - 1)])
+    log.debug("Host: %s; Port: %s" % (hostSelected, portSelected))
+
+    print("Which command?")
+    myServer.displayCommandList()
+    selection2 = input("Select a number:\n>>> ")
+
+    print("You selected Command#%s" % selection2)
+    processCommand(selection2, hostSelected, portSelected)
+    log.debug("End of SendCommand function")
 
 
 # Simple test function to ensure communication is working
