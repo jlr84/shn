@@ -30,7 +30,7 @@ def startVM(key):
     log.debug("Starting up VM...")
     result = "NO ACTION TAKEN"
 
-    if key == "start":	
+    if key == "start":
         rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud2.cfg",
                              shell=True)
         result = "999"
@@ -44,7 +44,7 @@ def startVM(key):
             result = "Failed"
             log.debug("Starting VM: %s." % result)
 
-    else: 
+    else:
         log.debug("Key incorrect. Received: %s" % key)
 
     return "Starting VM: %s." % result
@@ -55,7 +55,7 @@ def stopVM(key):
     log.debug("Stopping VM...")
     result = "NO ACTION TAKEN"
 
-    if key == "stop":	
+    if key == "stop":
         rc = subprocess.call("/usr/sbin/xl shutdown ubud2", shell=True)
         result = 999
         if rc == 0:
@@ -69,10 +69,10 @@ def stopVM(key):
             print("Stopping VM... FAILED")
 
         log.debug("Stopping VM %s." % result)
-    
-    else: 
+
+    else:
         log.debug("Key incorrect. Received: %s" % key)
-    
+
     return "Shutting down VM: %s." % result
 
 

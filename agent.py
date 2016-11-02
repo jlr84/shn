@@ -537,6 +537,36 @@ def stopServer(masterQuit=False):
     return returnCode
 
 
+def deleteVudHistory(no_confirmation=False):
+    log.info("Delete VM/VUD History Function starting...")
+    confirm = False
+    if no_confirmation:
+        confirm = True
+    else:
+        # Get confirmation from user
+        print("Confirm you wish to DELETE ALL SAVED VM/VUD HISTORY:")
+        answer = input("Confirm YES['y'] or NO['n']:\n>>> ")
+
+        if answer in ["y", "Y", "YES", "yes", "Yes"]:
+            log.debug("Request for deletion confirmed.")
+            confirm = True
+        else:
+            log.debug("Request for deletion cancelled.")
+            log.debug("Answer selected: %s" % answer)
+            confirm = False
+
+    # Delete history, if confirmed
+    if confirm:
+        log.debug("Removing VM/VUD history now.")
+        try:
+            os.remove("cache_agent_history")
+            log.info("VM/VUD History Deleted.")
+        except:
+            log.debug("Error deleting 'cache_agent_history' file or no file present")
+    else:
+        log.debug("History was NOT deleted.")
+
+
 # Quit gracefully after terminting all child processes
 def myQuit():
     log.info("Agent Exiting. Goodbye.")
@@ -641,31 +671,60 @@ def myMenu():
         invalid(choice)
 
 
+# Process arguments and notify user of their choices
+def processArguments(args):
+    log.info("Processing arguments...")
+
+    # Accept user-provided controller hostname, if provided
+    if args.controller:
+        print("Controller hostname set manually")
+        print("Using hostname: %s" % (args.controller))
+        log.debug("Using controller hostname: %s" % (args.controller))
+        config.ctlrHostName = args.controller
+
+    else:
+        print("Using default controller hostname: %s" % config.ctlrHostName)
+        log.debug("Using default monitor hostname: %s" % config.ctlrHostName)
+
+    # Accept user-provided controller port number, if provided
+    if args.port:
+        print("Controller port set manually")
+        print("Using port#: %d" % (args.port))
+        log.debug("Using controller port#: %d" % (args.port))
+        config.ctlrServerPort = args.port
+
+    else:
+        print("Using default controller port#: %s" % config.ctlrServerPort)
+        log.debug("Using default controller port#: %s" % config.ctlrServerPort)
+
+    # Delete previous status hisotry, if applicable
+    if args.fresh:
+        log.debug("Fresh start selected.")
+        deleteVudHistory(True)
+        print("VM/VUD Clone/Snapshot History Deleted: Starting Fresh")
+
+    log.info("End of 'process arguments.'")
+
+
 # Start of Main
 if __name__ == '__main__':
 
-    # Verify argument provided; if not provided use default,
-    # if too many exit, if provided use provided
-    if len(sys.argv) == 2:
-        log.debug("Using controller hostname: %s" % (sys.argv[1]))
-        print("Using controller hostname: '%s'" % (sys.argv[1]))
-        config.ctlrHostName = sys.argv[1]
+    log.info("Starting MAIN. Parsing arguments.")
+    parser = argparse.ArgumentParser()
+    #parser.add_argument("VUD_NAME", help="enter the name of the VUD\
+     #                   guest that this Agent will control during operation")
+    parser.add_argument("-c", "--controller", help="set hostname of controller\
+                        (default='controller.shn.local')")
+    parser.add_argument("-p", "--port", help="set port of monitor\
+                        (default='35353')", type=int)
+    parser.add_argument("-F", "--fresh", help="start fresh: remove previous\
+                        VM/VUD clone/snapshot history before starting", action="store_true")
+    args = parser.parse_args()
 
-    else:
-        print("usage: %s <hostname>" % sys.argv[0])
-        print("Example:\n$ %s controller.shn.local" % sys.argv[0])
+    # Process arguments
+    processArguments(args)
 
-        # If too many arguments, exit
-        if len(sys.argv) > 2:
-            log.debug("Too many arguments. Exiting.")
-            sys.exit(1)
-
-        # If zero arguments, use default controller hostname
-        else:
-            log.debug("Using default controller hostname")
-            print("No controller hostname provided.\n",
-                  "Using default setting: %s" % config.ctlrHostName)
-
+    # Start of Main functionality
     log.info("Starting Main [Agent]")
     hostIP = getMyIP()
     verifyHostName = findHostName(hostIP)

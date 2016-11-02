@@ -92,6 +92,40 @@ def sendStop(host, port):
     return response
 
 
+# Function for requesting complete clone of VM
+def sendClone(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Send CLONE Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Clone'")
+            response = proxy.cloneVM("clone")
+            log.info(response)
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
 #####################################################
 # Main Logic for Controller communicating to Agent(s)
 #####################################################
