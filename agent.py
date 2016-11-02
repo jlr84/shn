@@ -558,10 +558,10 @@ def saveCurrentVUD(vudName, skipVerify=False):
                     keepOldName = "N"
                 else:
                     log.debug("WARNING: VM selected is NOT the same as last"
-                              "time!")
-                    print("WARNING: You selected VUD '%s'; " % vudName)
+                              " time!")
+                    print("WARNING: You selected VUD '%s'; " % vudName, end='')
                     print("however, the last executed VUD was ", end='')
-                    print("'%s'." % oldCurrent, end='')
+                    print("'%s'." % oldCurrent)
                     stopLoop = False
                     while not stopLoop:
                         print("Would you like to revert to controlling the",
