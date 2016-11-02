@@ -84,25 +84,36 @@ def stopVM(key):
     log.debug("Stopping VM...")
     result = "NO ACTION TAKEN"
 
-    if key == "stop":
-        rc = subprocess.call("/usr/sbin/xl shutdown ubud2", shell=True)
-        result = 999
-        if rc == 0:
-            result = "Success"
-        elif rc == 1:
-            result = "Failed"
-            print("Stopping VM... FAILED")
-            print("Is the Agent running as root/sudo as required?")
-        else:
-            result = "Failed"
-            print("Stopping VM... FAILED")
+    # Get current VUD name
+    vudName = getCurrentVUD()
 
-        log.debug("Stopping VM %s." % result)
+    # Make process call string
+    callString = ''.join(["/usr/sbin/xl shutdown ", vudName])
+    log.debug("Command: %s" % callString)
+
+    if key == "stop":
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "Success"
+            elif rc == 1:
+                result = "Failed"
+                print("Stopping VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                print("Stopping VM... FAILED")
+
+            log.debug("Stopping VM %s." % result)
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to stop"
+            log.debug("No VM Stopped: %s" % result)
 
     else:
         log.debug("Key incorrect. Received: %s" % key)
 
-    return "Shutting down VM: %s." % result
+    return "Shutting down VM[%s]: %s." % (vudName, result)
 
 
 def failed(name):
