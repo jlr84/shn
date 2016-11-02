@@ -580,7 +580,7 @@ def saveCurrentVUD(vudName, skipVerify=False):
                         else:
                             log.debug("Wrong Answer")
                             print("Invalid Choice; try again.\n")
-    
+
                     log.debug("Confirmation stop loop exited")
         except:
             log.debug("No cache found or read failed")
@@ -655,11 +655,13 @@ def myQuit():
     raise SystemExit
 
 
+# Dispaly Invalid Menu choice for user
 def invalid(choice):
     log.debug("Invalid choice: %s" % choice)
     print("INVALID CHOICE!")
 
 
+# Display Admin Menu for User
 def adminMenu():
     log.debug("Displaying admin menu")
     print("\nAdmin Menu:")
@@ -674,6 +676,7 @@ def adminMenu():
     return input("Make a Choice\n>>> ")
 
 
+# Interpret User's Admin Menu Choice
 def adminSelection():
     global admin_selected
     adminChoice = adminMenu()
@@ -704,6 +707,7 @@ def adminSelection():
         invalid(adminChoice)
 
 
+# Display Menu for user
 def menu():
     log.debug("Displaying menu")
     print("\n\nMENU[Agent]:")
@@ -714,6 +718,7 @@ def menu():
     return input("Make a Choice\n>>> ")
 
 
+# Interpret User's Menu Choice
 def myMenu():
     global admin_selected
     choice = 0
@@ -779,7 +784,7 @@ def processArguments(args):
                 raise SystemExit
 
             # Otherwise, process VUD name as required
-            else: 
+            else:
                 print("VUD NAME Provided: %s" % (args.VUD_NAME))
                 log.debug("VUD NAME Provided: %s" % (args.VUD_NAME))
                 # Save user-provided VUD name to persistent memory

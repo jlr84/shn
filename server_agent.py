@@ -7,6 +7,24 @@ import subprocess
 
 
 ######################################
+# Supporting Functions
+######################################
+# Return name of current VUD/VM
+def getCurrentVUD():
+    log = logging.getLogger(__name__)
+    log.debug("Getting current VM/VUD name...")
+    currentVUD = "NONE"
+    try:
+        with dbm.open('cache_agent_history', 'r') as db:
+            currentVUD = (db.get('current')).decode("utf-8")
+            log.debug("Name retreived: '%s'" % currentVUD)
+    except:
+        log.debug("No cache found or read failed")
+
+    return currentVUD
+
+
+######################################
 # Define functions available to server
 ######################################
 def add(x, y):
@@ -30,24 +48,35 @@ def startVM(key):
     log.debug("Starting up VM...")
     result = "NO ACTION TAKEN"
 
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Make process call string
+    callString = ''.join(["/usr/sbin/xl create /etc/xen/", vudName, ".cfg"])
+    log.debug("Command: %s" % callString)
+
+    # Execute Command
     if key == "start":
-        rc = subprocess.call("/usr/sbin/xl create /etc/xen/ubud2.cfg",
-                             shell=True)
-        result = "999"
-        if rc == 0:
-            result = "Success"
-        elif rc == 1:
-            result = "Failed"
-            print("Starting VM... FAILED")
-            print("Is the Agent running as root/sudo as required?")
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "Success"
+            elif rc == 1:
+                result = "Failed"
+                print("Starting VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                log.debug("Starting VM: %s." % result)
+        # If vudName == "NONE" THEN:
         else:
-            result = "Failed"
-            log.debug("Starting VM: %s." % result)
+            result = "VUD=NONE; NO VUD to start"
+            log.debug("No VM Started: %s" % result)
 
     else:
         log.debug("Key incorrect. Received: %s" % key)
 
-    return "Starting VM: %s." % result
+    return "Starting VM[%s]: %s." % (vudName, result)
 
 
 def stopVM(key):
