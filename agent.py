@@ -324,11 +324,11 @@ def masterQuitConnection(total, ids, names, ports, times):
 
         # Pick Connection to close >> simply start with highest number
         t = total
-        log.debug("Connection t: %d" % t)
+        log.debug("Closing connection t [t=total]: %d" % t)
         valuePicked = False
         t = t - 1
 
-        while not valuePicked and t > 0:
+        while not valuePicked and t >= 0:
             if ports[t] == "000000":
                 t = t - 1
             else:
@@ -337,13 +337,14 @@ def masterQuitConnection(total, ids, names, ports, times):
 
         # Close Connection if valuePicked (if valid option for closing found)
         if valuePicked:
-            log.debug("Value Picked: %d" % t)
+            log.debug("Value Picked: %d" % (t + 1))
 
             # Close connection chosen above
             myContext = ssl.create_default_context()
             myContext.load_verify_locations(config.CACERTFILE)
 
             myurl = ''.join(['https://', names[t], ':', ports[t]])
+            log.debug("MyURL Selected: %s" % myurl)
             with xmlrpc.client.ServerProxy(myurl,
                                            context=myContext) as proxy:
 
