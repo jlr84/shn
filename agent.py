@@ -2,7 +2,6 @@ import xmlrpc.client
 import ssl
 import socket     # Required for network/socket connections
 import os         # Required for Forking/child processes
-import sys        # Required for getting command-line arguments
 import time       # Required for sleep call
 import threading  # Required for communication sub-threads
 import datetime
@@ -538,6 +537,64 @@ def stopServer(masterQuit=False):
     return returnCode
 
 
+# Save current VUD to persistent memory
+def saveCurrentVUD(vudName):
+    log.debug("Saving current VUD function beginning")
+    keepOldName = "N"
+
+    # Determine if current VUD name matches last-executed VUD name
+    try:
+        with dbm.open('cache_agent_history', 'r') as db:
+            # Get previously-saved "current VUD"
+            oldCurrent = (db.get('current')).decode("utf-8")
+            if oldCurrent == vudName:
+                log.debug("Starting the same VM as last time...")
+            else:
+                log.debug("WARNING: VM selected is NOT the same as last time!")
+                print("WARNING: You selected VUD named 'vudName'; however",
+                      "the last executed VUD was named 'oldCurrent'.")
+                stopLoop = False
+                while not stopLoop:
+                    print("Would you like to revert to controlling the same",
+                          "VUD as last time?")
+                    print("'Y') YES, REVERT to last executed VUD",
+                          "['%s']" % oldCurrent)
+                    print("'N') NO, KEEP the same VUD I selected",
+                          "['%s']" % vudName)
+                    keepOldName = input("Make a Choice\n>>> ")
+                    if keepOldName in ["Y", "y"]:
+                        log.debug("Yes, REVERT to %s selcted" % oldCurrent)
+                        stopLoop = True
+                    elif keepOldName in ["N", "n"]:
+                        log.debug("No, KEEP the same choice given",
+                                  "[%s]" % vudName)
+                        stopLoop = True
+                    else:
+                        log.debug("Wrong Answer")
+                        print("Invalid Choice; try again.\n")
+
+                log.debug("Confirmation stop loop exited")
+    except:
+        log.debug("No cache found or read failed")
+
+    # If using new name, update cache file
+    if keepOldName in ["N", "n"]:
+        try:
+            with dbm.open('cache_agent_history', 'c') as db:
+                # Store new name in persistent storage
+                db['current'] = vudName
+                log.debug("Saved new VUD name: %s" % (vudName))
+
+        except:
+            log.warning("ERROR writing to cache.")
+
+    else:
+        log.debug("Using old VUD Name; cache file left un-changed.")
+
+    log.debug("End of save current VUD function")
+
+
+# Delete the VUD History cache file
 def deleteVudHistory(no_confirmation=False):
     log.info("Delete VM/VUD History Function starting...")
     confirm = False
@@ -563,7 +620,8 @@ def deleteVudHistory(no_confirmation=False):
             os.remove("cache_agent_history")
             log.info("VM/VUD History Deleted.")
         except:
-            log.debug("Error deleting 'cache_agent_history' file or no file present")
+            log.debug("Error deleting 'cache_agent_history' file or\
+                      no file present")
     else:
         log.debug("History was NOT deleted.")
 
@@ -682,7 +740,8 @@ def processArguments(args):
               "full functionality. (No access to VUD.)")
         if args.VUD_NAME == "NONE":
             log.debug("VUD_NAME entered correctly as NONE")
-            # TODO Log NONE in cache_agent_history file
+            # Save current VUD as "NONE" to persistent memory
+            saveCurrentVUD("NONE")
         else:
             log.info("VUD_NAME Provided with NO_VUD flag")
             print("WARNING: VUD NAME Provided even though",
@@ -690,7 +749,7 @@ def processArguments(args):
                   "to 'NONE' to remove this warning, if you",
                   "intended to use the NO_VUD flag, otherwise",
                   "remove NO_VUD flag. Exiting.")
-            raise SystemExit 
+            raise SystemExit
 
     else:
         log.debug("Running in normal/VUD mode")
@@ -698,7 +757,10 @@ def processArguments(args):
         if args.VUD_NAME:
             print("VUD NAME Provided: %s" % (args.VUD_NAME))
             log.debug("VUD NAME Provided: %s" % (args.VUD_NAME))
-            # TODO Record name to cache_agent_history file
+            # Save user-provided VUD name to persistent memory
+            saveCurrentVUD(args.VUD_NAME)
+            log.debug("Name %s saved to persistent memory" % (args.VUD_NAME))
+
         else:
             log.warning("ERROR: _NO_ VUD Name Provided")
 
@@ -751,7 +813,8 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--port", help="set port of monitor\
                         (default='35353')", type=int)
     parser.add_argument("-F", "--fresh", help="start fresh: remove previous\
-                        VM/VUD clone/snapshot history before starting", action="store_true")
+                        VM/VUD clone/snapshot history before\
+                        starting", action="store_true")
     args = parser.parse_args()
 
     # Process arguments
