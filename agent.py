@@ -676,6 +676,32 @@ def myMenu():
 def processArguments(args):
     log.info("Processing arguments...")
 
+    # Confirm NO_VUD mode or not
+    if args.NO_VUD:
+        print("NO_VUD Mode selected: Agent running without",
+              "full functionality. (No access to VUD.)")
+        if args.VUD_NAME == "NONE":
+            log.debug("VUD_NAME entered correctly as NONE")
+            # TODO Log NONE in cache_agent_history file
+        else:
+            log.info("VUD_NAME Provided with NO_VUD flag")
+            print("WARNING: VUD NAME Provided even though",
+                  "NO_VUD flag was selected. Change VUD_NAME",
+                  "to 'NONE' to remove this warning, if you",
+                  "intended to use the NO_VUD flag, otherwise",
+                  "remove NO_VUD flag. Exiting.")
+            raise SystemExit 
+
+    else:
+        log.debug("Running in normal/VUD mode")
+        # Accept user-provided VUD name
+        if args.VUD_NAME:
+            print("VUD NAME Provided: %s" % (args.VUD_NAME))
+            log.debug("VUD NAME Provided: %s" % (args.VUD_NAME))
+            # TODO Record name to cache_agent_history file
+        else:
+            log.warning("ERROR: _NO_ VUD Name Provided")
+
     # Accept user-provided controller hostname, if provided
     if args.controller:
         print("Controller hostname set manually")
@@ -712,8 +738,14 @@ if __name__ == '__main__':
 
     log.info("Starting MAIN. Parsing arguments.")
     parser = argparse.ArgumentParser()
-    #parser.add_argument("VUD_NAME", help="enter the name of the VUD\
-     #                   guest that this Agent will control during operation")
+    parser.add_argument("VUD_NAME", help="enter the name of the VUD\
+                       guest that this Agent will control during\
+                       operation. (Enter 'NONE' when using --NO_VUD\
+                       flag.)")
+    parser.add_argument("--NO_VUD", help="run Agent without connecting\
+                       to VUD guest; if used, enter 'NONE' as VUD_NAME\
+                       argument (This option suggested when testing\
+                       Agent on non-Xen host.)", action="store_true")
     parser.add_argument("-c", "--controller", help="set hostname of controller\
                         (default='controller.shn.local')")
     parser.add_argument("-p", "--port", help="set port of monitor\
