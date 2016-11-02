@@ -1,11 +1,18 @@
 #!/bin/bash
 # CLONE VM: This is a script to clone a VM for the SHNet project
 
-#SETTINGS:
-CURRENTVM="ubud2"
-CLONEDVM="vud2"
+# SETTINGS:
+# Note: Currently set to take the names for cloning as the 
+# first/second command line argument. Comment out the next 
+# two lines and remove "#" from the third/fourth lines to 
+# specify names here instead of via command line.
+CURRENTVM=$1
+CLONEDVM=$2
+#CURRENTVM="ubud2"
+#CLONEDVM="vud2"
 
 # Step 1: Create new LVS Partition (named 'vud2')
+echo "Creating new LVS partition..."
 sudo lvcreate -y -L 10G -n $CLONEDVM /dev/xen1
 
 # Verify Created with:
