@@ -4,6 +4,7 @@ import logging
 import config
 import dbm
 import subprocess
+import datetime
 
 
 ######################################
@@ -22,6 +23,53 @@ def getCurrentVUD():
         log.debug("No cache found or read failed")
 
     return currentVUD
+
+
+# Return name to use for clone
+def getCloneName(currentName):
+    log = logging.getLogger(__name__)
+    log.debug("Finding name for clone...")
+    fileName = "ERROR"
+
+    # Starting with 1, test if clone name exists until name is found
+    # that does not exist
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join([currentName, "_clone_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+        try:
+            with dbm.open('cache_agent_history', 'r') as db:
+                oldClone = db.get(fileName)
+                log.debug("Clone name tested as: %s" % oldClone)
+                if oldClone is None:
+                    exists = False
+                else:
+                    num = num + 1
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Returning name: %s" % fileName)
+    return fileName
+
+
+# Save successful clone name to persistent memory
+def saveCloneName(newName, timeSaved):
+    log = logging.getLogger(__name__)
+    log.debug("Saving clone name to memory...")
+    status = "FAILED"
+    try:
+        with dbm.open('cache_agent_history', 'c') as db:
+            # Store name and time pair to memory
+            db[newName] = timeSaved
+            log.debug("Saved clone name: %s" % newName)
+            status = "SUCCESS"
+    except:
+        log.warning("ERROR writing to cache.")
+
+    return status
 
 
 ######################################
@@ -114,6 +162,66 @@ def stopVM(key):
         log.debug("Key incorrect. Received: %s" % key)
 
     return "Shutting down VM[%s]: %s." % (vudName, result)
+
+
+def cloneVM(key):
+    log = logging.getLogger(__name__)
+    log.debug("Cloning VM...")
+    result = "NO ACTION TAKEN"
+    result2 = "NO RESULT FOR WRITE"
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Get name for clone
+    cloneName = getCloneName(vudName)
+
+    # Make process call string
+    callString = ''.join(["./scripts/clone.sh ", vudName, " ", cloneName])
+    log.debug("Command: %s" % callString)
+    log.info("WARNING: This may take a few minutes!")
+
+    if key == "clone":
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "Success"
+            elif rc == 1:
+                result = "Failed"
+                print("Cloning VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                print("Cloning VM... FAILED")
+
+            log.debug("Cloning VM %s." % result)
+
+            # Save clone name in persistent memory
+            saveTime = str((datetime.datetime.now()).isoformat())
+            result2 = saveCloneName(cloneName, saveTime)
+            log.debug("Saved to memory: %s saved at %s" % (cloneName, saveTime))
+            log.info("Write to DB result: %s" % result2)
+
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to clone"
+            log.debug("No VM Cloned: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    # Summarize cloning result prior to sending back to user
+    if result == "SUCCESS" and result2 == "SUCCESS":
+        result3 = ''.join(["Cloning VM[", vudName, "]: Clone-", result,
+                           ", DB Save-", result2, ", saved as '",
+                           cloneName, "'"])
+        log.debug("Result logged as: %s" % result3)
+    else:
+        result3 = ''.join(["Cloning VM[", vudName, "] FAILED: Clone-", result,
+                           ", DB Save-", result2])
+        log.debug("Result logged as: %s" % result3)
+
+    return result3
 
 
 def failed(name):
@@ -229,6 +337,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(failed, 'failed')
         server.register_function(startVM, 'startVM')
         server.register_function(stopVM, 'stopVM')
+        server.register_function(stopVM, 'cloneVM')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))
