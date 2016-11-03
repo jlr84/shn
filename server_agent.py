@@ -273,6 +273,7 @@ def cloneVM(key):
 
     return result3
 
+
 # Create snapshot of vm (based on current vm listed in persistent memory)
 def snapshotVM(key):
     log = logging.getLogger(__name__)
@@ -321,12 +322,12 @@ def snapshotVM(key):
 
     # Summarize snapshot result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
-        result3 = ''.join(["Snapshot of VM[", vudName, "]: Clone-", result,
+        result3 = ''.join(["Snapshot of VM[", vudName, "]: Snapshot-", result,
                            ", DB Save-", result2, ", saved as '",
                            snapName, "'"])
         log.debug("Result logged as: %s" % result3)
     else:
-        result3 = ''.join(["Snapshot of VM[", vudName, "] FAILED: Clone-",
+        result3 = ''.join(["Snapshot of VM[", vudName, "] FAILED: Snapshot-",
                            result, ", DB Save-", result2])
         log.debug("Result logged as: %s" % result3)
 
