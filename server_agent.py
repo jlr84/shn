@@ -337,7 +337,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(failed, 'failed')
         server.register_function(startVM, 'startVM')
         server.register_function(stopVM, 'stopVM')
-        server.register_function(stopVM, 'cloneVM')
+        server.register_function(cloneVM, 'cloneVM')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))
