@@ -144,7 +144,7 @@ def getVmStatus(key):
     log.debug("Getting Status of VM...")
     result = "NO ACTION TAKEN"
     header = ''.join(["Name                                        ID   Mem",
-                      " VCPUs     State   Time\n"])
+                      " VCPUs      State      Time\n"])
 
     # Get current VUD name
     vudName = getCurrentVUD()
@@ -155,21 +155,26 @@ def getVmStatus(key):
 
     if key == "status":
         if not vudName == "NONE":
+            log.debug("vudName is not 'NONE'")
             process = subprocess.Popen(callString, stdout=subprocess.PIPE,
                                        shell=True)
             (output, err) = process.communicate()
+            output2 = output.decode("utf-8")
             rc = process.wait()
             if rc == 0:
                 # VM is running; status in 'output'
+                log.debug("RC code = 0")
                 result = ''.join([vudName, "active. Current status is\n",
-                                  header, output])
+                                  header, output2])
             elif rc == 1:
+                log.debug("RC code = 1")
                 # VM is not running
                 result = ''.join([vudName, " is NOT active [shutdown]"])
                 print("No result returned; VM not running OR not enough",
                       "permissions.")
                 print("Is the Agent running as root/sudo as required?")
             else:
+                log.debug("RC code NOT 0 or 1")
                 result = ''.join(["Finding Status for ", vudName, " FAILED; ",
                                   "Err: ", err, "Exit Code: ", rc])
                 print("Finding Status FAILED. Unknown Error.")
@@ -183,6 +188,7 @@ def getVmStatus(key):
     else:
         log.debug("Key incorrect. Received: %s" % key)
 
+    log.debug("Returning: %s" % result)
     return result
 
 
