@@ -55,6 +55,36 @@ def getCloneName(currentName):
     return fileName
 
 
+# Return name to use for snapshot
+def getSnapshotName(currentName):
+    log = logging.getLogger(__name__)
+    log.debug("Finding name for snapshot...")
+    fileName = "ERROR"
+
+    # Starting with 1, test if snapshot name exists until name is found
+    # that does not exist
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join([currentName, "_snap_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+        try:
+            with dbm.open('cache_agent_history', 'r') as db:
+                oldSnapshot = db.get(fileName)
+                log.debug("Snapshot name tested as: %s" % oldSnapshot)
+                if oldSnapshot is None:
+                    exists = False
+                else:
+                    num = num + 1
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Returning name: %s" % fileName)
+    return fileName
+
+
 # Save successful clone name to persistent memory
 def saveCloneName(newName, timeSaved):
     log = logging.getLogger(__name__)
@@ -65,6 +95,23 @@ def saveCloneName(newName, timeSaved):
             # Store name and time pair to memory
             db[newName] = timeSaved
             log.debug("Saved clone name: %s" % newName)
+            status = "SUCCESS"
+    except:
+        log.warning("ERROR writing to cache.")
+
+    return status
+
+
+# Save successful snapshot name to persistent memory
+def saveSnapshotName(newName, timeSaved):
+    log = logging.getLogger(__name__)
+    log.debug("Saving snapshot name to memory...")
+    status = "FAILED"
+    try:
+        with dbm.open('cache_agent_history', 'c') as db:
+            # Store name and time pair to memory
+            db[newName] = timeSaved
+            log.debug("Saved snapshot name: %s" % newName)
             status = "SUCCESS"
     except:
         log.warning("ERROR writing to cache.")
@@ -91,6 +138,7 @@ def divide(x, y):
     return x/y
 
 
+# Start VM (Based on current VM in persistent memory)
 def startVM(key):
     log = logging.getLogger(__name__)
     log.debug("Starting up VM...")
@@ -127,6 +175,7 @@ def startVM(key):
     return "Starting VM[%s]: %s." % (vudName, result)
 
 
+# Stop VM (Based on current VM in persistent memory)
 def stopVM(key):
     log = logging.getLogger(__name__)
     log.debug("Stopping VM...")
@@ -164,6 +213,7 @@ def stopVM(key):
     return "Shutting down VM[%s]: %s." % (vudName, result)
 
 
+# Create complete backup (clone) of vm (based on current vm listed in p-memory)
 def cloneVM(key):
     log = logging.getLogger(__name__)
     log.debug("Cloning VM...")
@@ -223,13 +273,74 @@ def cloneVM(key):
 
     return result3
 
+# Create snapshot of vm (based on current vm listed in persistent memory)
+def snapshotVM(key):
+    log = logging.getLogger(__name__)
+    log.debug("Creating snapshot of VM...")
+    result = "NO ACTION TAKEN"
+    result2 = "NO RESULT FOR WRITE"
 
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Get name for clone
+    snapName = getSnapshotName(vudName)
+
+    # Make process call string
+    callString = ''.join(["./scripts/snapshot.sh ", vudName, " ", snapName])
+    log.debug("Command: %s" % callString)
+
+    if key == "snapshot":
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "SUCCESS"
+            elif rc == 1:
+                result = "Failed"
+                print("Snapshot of VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                print("Snapshot of VM... FAILED")
+
+            log.debug("Snapshot of VM %s." % result)
+
+            # Save snapshot name in persistent memory
+            saveTime = str((datetime.datetime.now()).isoformat())
+            result2 = saveSnapshotName(snapName, saveTime)
+            log.debug("Saved to memory: %s saved at %s" % (snapName, saveTime))
+            log.info("Write to DB result: %s" % result2)
+
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to snapshot"
+            log.debug("No VM Snapshot created: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    # Summarize snapshot result prior to sending back to user
+    if result == "SUCCESS" and result2 == "SUCCESS":
+        result3 = ''.join(["Snapshot of VM[", vudName, "]: Clone-", result,
+                           ", DB Save-", result2, ", saved as '",
+                           snapName, "'"])
+        log.debug("Result logged as: %s" % result3)
+    else:
+        result3 = ''.join(["Snapshot of VM[", vudName, "] FAILED: Clone-",
+                           result, ", DB Save-", result2])
+        log.debug("Result logged as: %s" % result3)
+
+    return result3
+
+
+# Receive report of FAILED Agent Registration
 def failed(name):
     log = logging.getLogger(__name__)
     log.debug("Agent registration with %s FAILED." % name)
     return "Failed registration acknowledged."
 
 
+# Receive report of good / confirmed Agent Registration
 def confirm(name, port, idnum, time):
     log = logging.getLogger(__name__)
     log.debug("Agent Registered to "
@@ -338,6 +449,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(startVM, 'startVM')
         server.register_function(stopVM, 'stopVM')
         server.register_function(cloneVM, 'cloneVM')
+        server.register_function(snapshotVM, 'snapshotVM')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))

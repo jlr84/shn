@@ -222,17 +222,20 @@ def processCommand(numSelected, thisHost, thisPort):
     log.debug("Processing command...")
     if numSelected == "1":
         rsp = myServer.sendStart(thisHost, thisPort)
-        log.debug("Num1 Response: %s" % rsp)
+        log.debug("#1[Start] Response: %s" % rsp)
     elif numSelected == "2":
         rsp = myServer.sendStop(thisHost, thisPort)
-        log.debug("Num2 Response: %s" % rsp)
+        log.debug("#2[Stop] Response: %s" % rsp)
+    elif numSelected == "4":
+        rsp = myServer.sendSnapshot(thisHost, thisPort)
+        log.debug("#4[Snapshot] Response: %s" % rsp)
     elif numSelected == "5":
         print("'Complete CLone' Command Executing...")
         print("WARNING: This make take a few minutes. Please be patient")
         # TODO Add status bar so user knows how long this will take
         print("----TODO / FUTURE WORK: ADD STATUS BAR HERE ----")
         rsp = myServer.sendClone(thisHost, thisPort)
-        log.debug("Num5 Response: %s" % rsp)
+        log.debug("#5[Clone] Response: %s" % rsp)
     else:
         print("Functionality NOT implemented or BAD selection.")
 
