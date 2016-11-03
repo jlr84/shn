@@ -227,10 +227,12 @@ def processCommand(numSelected, thisHost, thisPort):
         rsp = myServer.sendStop(thisHost, thisPort)
         log.debug("Num2 Response: %s" % rsp)
     elif numSelected == "5":
-        rsp = myServer.sendClone(thisHost, thisPort)
-        log.debug("Num5 Response: %s" % rsp)
         print("'Complete CLone' Command Executing...")
         print("WARNING: This make take a few minutes. Please be patient")
+        # TODO Add status bar so user knows how long this will take
+        print("----TODO / FUTURE WORK: ADD STATUS BAR HERE ----")
+        rsp = myServer.sendClone(thisHost, thisPort)
+        log.debug("Num5 Response: %s" % rsp)
     else:
         print("Functionality NOT implemented or BAD selection.")
 

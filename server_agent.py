@@ -185,7 +185,7 @@ def cloneVM(key):
         if not vudName == "NONE":
             rc = subprocess.call(callString, shell=True)
             if rc == 0:
-                result = "Success"
+                result = "SUCCESS"
             elif rc == 1:
                 result = "Failed"
                 print("Cloning VM... FAILED")
