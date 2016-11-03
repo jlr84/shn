@@ -11,6 +11,40 @@ import time
 #####################################################
 # Commands available for controlling remote VMs/VUDs
 #####################################################
+# Function for requesting STATUS of VM
+def sendStatusRequest(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Send Status Request Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Get Status'")
+            response = proxy.getVmStatus("status")
+            log.info(response)
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
 # Function for requesting START of VM
 def sendStart(host, port):
     log = logging.getLogger(__name__)

@@ -220,6 +220,7 @@ def displayAgents(shortList=False):
 def displayCommandList():
     log.debug("Displaying Command List...")
     print("Available Options:")
+    print("0) Check VUD Status")
     print("1) Start VUD")
     print("2) Shutdown VUD")
     print("3) Pause VUD")
@@ -234,21 +235,30 @@ def displayCommandList():
 def processCommand(numSelected, thisHost, thisPort):
     # TODO Finish this
     log.debug("Processing command...")
-    if numSelected == "1":
+    if numSelected == "0":
+        rsp = myServer.sendStatusRequest(thisHost, thisPort)
+        log.debug("#0[GetStatus] Response: %s" % rsp)
+        print("#0[GetStatus] Response: \n%s" % rsp)
+    elif numSelected == "1":
         rsp = myServer.sendStart(thisHost, thisPort)
         log.debug("#1[Start] Response: %s" % rsp)
+        print("#1[Start] Response: %s" % rsp)
     elif numSelected == "2":
         rsp = myServer.sendStop(thisHost, thisPort)
         log.debug("#2[Stop] Response: %s" % rsp)
+        print("#2[Stop] Response: %s" % rsp)
     elif numSelected == "3":
         rsp = myServer.sendPause(thisHost, thisPort)
         log.debug("#3[Pause] Response: %s" % rsp)
+        print("#3[Pause] Response: %s" % rsp)
     elif numSelected == "4":
         rsp = myServer.sendUnpause(thisHost, thisPort)
         log.debug("#4[UN-Pause] Response: %s" % rsp)
+        print("#4[UN-Pause] Response: %s" % rsp)
     elif numSelected == "5":
         rsp = myServer.sendSnapshot(thisHost, thisPort)
         log.debug("#5[Snapshot] Response: %s" % rsp)
+        print("#5[Snapshot] Response: %s" % rsp)
     elif numSelected == "7":
         print("'Complete CLone' Command Executing...")
         print("WARNING: This make take a few minutes. Please be patient")
@@ -256,6 +266,7 @@ def processCommand(numSelected, thisHost, thisPort):
         print("----TODO / FUTURE WORK: ADD STATUS BAR HERE ----")
         rsp = myServer.sendClone(thisHost, thisPort)
         log.debug("#7[Clone] Response: %s" % rsp)
+        print("#7[Clone] Response: %s" % rsp)
     else:
         print("Functionality NOT implemented or BAD selection.")
 

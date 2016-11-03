@@ -138,6 +138,54 @@ def divide(x, y):
     return x/y
 
 
+# Get VM Status (of current VM listed in persistent memory)
+def getVmStatus(key):
+    log = logging.getLogger(__name__)
+    log.debug("Getting Status of VM...")
+    result = "NO ACTION TAKEN"
+    header = ''.join(["Name                                        ID   Mem",
+                      " VCPUs     State   Time\n"])
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Make process call string
+    callString = ''.join(["/usr/sbin/xl list | grep ", vudName])
+    log.debug("Command: %s" % callString)
+
+    if key == "status":
+        if not vudName == "NONE":
+            process = subprocess.Popen(callString, stdout=subprocess.PIPE,
+                                       shell=True)
+            (output, err) = process.communicate()
+            rc = process.wait()
+            if rc == 0:
+                # VM is running; status in 'output'
+                result = ''.join([vudName, "active. Current status is\n",
+                                  header, output])
+            elif rc == 1:
+                # VM is not running
+                result = ''.join([vudName, " is NOT active [shutdown]"])
+                print("No result returned; VM not running OR not enough",
+                      "permissions.")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = ''.join(["Finding Status for ", vudName, " FAILED; ",
+                                  "Err: ", err, "Exit Code: ", rc])
+                print("Finding Status FAILED. Unknown Error.")
+
+            log.debug(result)
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; Cannot have status of NO VUD!"
+            log.debug("No VM Status: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    return result
+
+
 # Start VM (Based on current VM in persistent memory)
 def startVM(key):
     log = logging.getLogger(__name__)
@@ -527,6 +575,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(snapshotVM, 'snapshotVM')
         server.register_function(pauseVM, 'pauseVM')
         server.register_function(unpauseVM, 'unpauseVM')
+        server.register_function(getVmStatus, 'getVmStatus')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))
