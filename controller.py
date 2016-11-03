@@ -216,6 +216,20 @@ def displayAgents(shortList=False):
     return savedResults
 
 
+# Display the choice list for user to pick command
+def displayCommandList():
+    log.debug("Displaying Command List...")
+    print("Available Options:")
+    print("1) Start VUD")
+    print("2) Shutdown VUD")
+    print("3) Pause VUD")
+    print("4) UN-Pause VUD")
+    print("5) Take Snapshot of VUD")
+    print("6) Restore from Snapshot")
+    print("7) Backup [Clone] VUD (WARNING: Time-intensive)")
+    print("8) Restore from Backup")
+
+
 # Select which function to call based on command selected
 def processCommand(numSelected, thisHost, thisPort):
     # TODO Finish this
@@ -226,16 +240,22 @@ def processCommand(numSelected, thisHost, thisPort):
     elif numSelected == "2":
         rsp = myServer.sendStop(thisHost, thisPort)
         log.debug("#2[Stop] Response: %s" % rsp)
+    elif numSelected == "3":
+        rsp = myServer.sendPause(thisHost, thisPort)
+        log.debug("#3[Pause] Response: %s" % rsp)
     elif numSelected == "4":
-        rsp = myServer.sendSnapshot(thisHost, thisPort)
-        log.debug("#4[Snapshot] Response: %s" % rsp)
+        rsp = myServer.sendUnpause(thisHost, thisPort)
+        log.debug("#4[UN-Pause] Response: %s" % rsp)
     elif numSelected == "5":
+        rsp = myServer.sendSnapshot(thisHost, thisPort)
+        log.debug("#5[Snapshot] Response: %s" % rsp)
+    elif numSelected == "7":
         print("'Complete CLone' Command Executing...")
         print("WARNING: This make take a few minutes. Please be patient")
         # TODO Add status bar so user knows how long this will take
         print("----TODO / FUTURE WORK: ADD STATUS BAR HERE ----")
         rsp = myServer.sendClone(thisHost, thisPort)
-        log.debug("#5[Clone] Response: %s" % rsp)
+        log.debug("#7[Clone] Response: %s" % rsp)
     else:
         print("Functionality NOT implemented or BAD selection.")
 
@@ -255,7 +275,7 @@ def sendCommand():
     log.debug("Host: %s; Port: %s" % (hostSelected, portSelected))
 
     print("Which command?")
-    myServer.displayCommandList()
+    displayCommandList()
     selection2 = input("Select a number:\n>>> ")
 
     print("You selected Command#%s" % selection2)

@@ -213,6 +213,80 @@ def stopVM(key):
     return "Shutting down VM[%s]: %s." % (vudName, result)
 
 
+# Pause VM (Based on current VM in persistent memory)
+def pauseVM(key):
+    log = logging.getLogger(__name__)
+    log.debug("Pausing VM...")
+    result = "NO ACTION TAKEN"
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Make process call string
+    callString = ''.join(["/usr/sbin/xl pause ", vudName])
+    log.debug("Command: %s" % callString)
+
+    # Execute Command
+    if key == "pause":
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "Success"
+            elif rc == 1:
+                result = "Failed"
+                print("Pausing VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                log.debug("Pausing VM: %s." % result)
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to pause"
+            log.debug("No VM to Pause: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    return "Pausing VM[%s]: %s." % (vudName, result)
+
+
+# Un-Pause VM (Based on current VM in persistent memory)
+def unpauseVM(key):
+    log = logging.getLogger(__name__)
+    log.debug("Un-Pausing VM...")
+    result = "NO ACTION TAKEN"
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Make process call string
+    callString = ''.join(["/usr/sbin/xl unpause ", vudName])
+    log.debug("Command: %s" % callString)
+
+    # Execute Command
+    if key == "unpause":
+        if not vudName == "NONE":
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "Success"
+            elif rc == 1:
+                result = "Failed"
+                print("Un-Pausing VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                log.debug("Un-Pausing VM: %s." % result)
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to pause"
+            log.debug("No VM to Un-Pause: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    return "Un-Pausing VM[%s]: %s." % (vudName, result)
+
+
 # Create complete backup (clone) of vm (based on current vm listed in p-memory)
 def cloneVM(key):
     log = logging.getLogger(__name__)
@@ -451,6 +525,8 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(stopVM, 'stopVM')
         server.register_function(cloneVM, 'cloneVM')
         server.register_function(snapshotVM, 'snapshotVM')
+        server.register_function(pauseVM, 'pauseVM')
+        server.register_function(unpauseVM, 'unpauseVM')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))
