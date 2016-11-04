@@ -211,13 +211,13 @@ def getCloneList(currentName):
         # Attempt to retrieve record
         try:
             with dbm.open('cache_agent_history', 'r') as db:
-                oldClone = db.get(fileName)
+                oldClone = (db.get(fileName)).decode("utf-8")
                 log.debug("Clone name tested as: %s" % oldClone)
                 if oldClone is None:
                     exists = False
                 else:
                     # Save name/time to list
-                    pair = [fileName, oldClone.decode("utf-8")]
+                    pair = [fileName, oldClone]
                     cloneList.append(pair)
                     num = num + 1
         except:
@@ -226,6 +226,42 @@ def getCloneList(currentName):
 
     log.debug("Returning %d records" % (num - 1))
     return cloneList
+
+
+# Return array of snapshots already saved
+def getSnapList(currentName):
+    log = logging.getLogger(__name__)
+    log.debug("Finding list of saved snapshot(s)...")
+    fileName = "ERROR"
+    snapList = []
+
+    # Starting with 1, test if clone name exists until name is found
+    # that does not exist; save each name/time pair to send to user
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join([currentName, "_snap_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+
+        # Attempt to retrieve record
+        try:
+            with dbm.open('cache_agent_history', 'r') as db:
+                oldSnap = (db.get(fileName)).decode("utf-8")
+                log.debug("Snapshot name tested as: %s" % oldSnap)
+                if oldSnap is None:
+                    exists = False
+                else:
+                    # Save name/time to list
+                    pair = [fileName, oldSnap]
+                    snapList.append(pair)
+                    num = num + 1
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Returning %d records" % (num - 1))
+    return snapList
 
 
 # Save change to current VUD name persistent memory
@@ -718,6 +754,89 @@ def snapshotVM(key):
     return result3
 
 
+# Report list of Saved snapshots for current vm listed in persistent memory
+def snapshotList(key):
+    log = logging.getLogger(__name__)
+    log.debug("Getting Snapshot List...")
+    savedSnapList = []
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    if key == "snapshotList":
+        if not vudName == "NONE":
+
+            # Get snapshot list
+            savedSnapList = getSnapList(vudName)
+            log.debug("Snapshot List: %s." % (savedSnapList))
+
+        # If vudName == "NONE" THEN:
+        else:
+            log.debug("VM 'NONE' has no snapshots")
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    return savedSnapList
+
+
+# Restore to snapshot based on name received and current vm listed in memory
+def restoreSnap(key, snapName):
+    log = logging.getLogger(__name__)
+    log.debug("Restoring VM from Snapshot...")
+    result = "NO ACTION TAKEN"
+    result2 = "NO RESULT FOR WRITE"
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Make process call string
+    callString = ''.join(["sudo lvconvert --merge /dev/xen1/", snapName])
+    log.debug("Command: %s" % callString)
+
+    if key == "restore":
+        if not vudName == "NONE":
+            log.debug("Executing restore now...")
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "SUCCESS"
+            elif rc == 1:
+                result = "Failed"
+                print("Restore VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                print("Restore VM... FAILED")
+
+            log.debug("Restore VM %s." % result)
+
+            # Remove snapshot name from persistent memory
+            result2 = removeEntryFromDB(snapName)
+            log.debug("Removed name: %s" % (snapName))
+            log.info("Write to DB result: %s" % result2)
+
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to restore"
+            log.debug("No VM Restored: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    # Summarize restore result prior to sending back to user
+    if result == "SUCCESS" and result2 == "SUCCESS":
+        result3 = ''.join(["VM[", vudName, "] Restored From Snapshot '",
+                           snapName, "'; Result:", result,
+                           "; DB Save Result: ", result2])
+        log.debug("Result logged as: %s" % result3)
+    else:
+        result3 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
+                           result, ", DB Save Result--", result2])
+        log.debug("Result logged as: %s" % result3)
+
+    return result3
+
+
 # Receive report of FAILED Agent Registration
 def failed(name):
     log = logging.getLogger(__name__)
@@ -840,6 +959,8 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(getVmStatus, 'getVmStatus')
         server.register_function(cloneList, 'cloneList')
         server.register_function(restoreClone, 'restoreClone')
+        server.register_function(snapshotList, 'snapshotList')
+        server.register_function(restoreSnap, 'restoreSnap')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))

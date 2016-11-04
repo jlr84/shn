@@ -304,6 +304,30 @@ def processCommand(numSelected, thisHost, thisPort):
         rsp = myServer.sendSnapshot(thisHost, thisPort)
         log.debug("#5[Snapshot] Response: %s" % rsp)
         print("#5[Snapshot] Response: %s" % rsp)
+    elif numSelected == "6":
+        rsp = myServer.sendSnapListRequest(thisHost, thisPort)
+        log.debug("#6[RestoreSnapshot] Response: %s" % rsp)
+        # If list is empty, tell user and end
+        if len(rsp) == 0:
+            log.debug("There are ZERO saved snapshots. Exiting.")
+            print("There are ZERO saved snapshots. Exiting.")
+        # If list is not empty, confirm user choice
+        else:
+            log.debug("There are %d options. Verifying choice." % (len(rsp)))
+            resChoice = getUserRestoreChoice(rsp)
+            # If response is 0, exit without restoring
+            if resChoice == 0:
+                log.debug("'0' selected; cancelling restore request")
+                print("'0' selected; cancelling restore request")
+            # Otherwise execute restore based on choice
+            else:
+                restoreName = rsp[(resChoice - 1)][0]
+                log.debug("Req'ing restore to: %s" % (restoreName))
+                rsp2 = myServer.sendRestoreSnap(thisHost, thisPort,
+                                                restoreName)
+                log.debug("#6[RestoreSnap] Response: %s" % rsp2)
+                print("#6[RestoreSnap] Response: %s" % rsp2)
+
     elif numSelected == "7":
         print("'Complete CLone' Command Executing...")
         print("WARNING: This make take a few minutes. Please be patient")
@@ -314,7 +338,7 @@ def processCommand(numSelected, thisHost, thisPort):
         print("#7[Clone] Response: %s" % rsp)
     elif numSelected == "8":
         rsp = myServer.sendCloneListRequest(thisHost, thisPort)
-        log.debug("#8[Snapshot] Response: %s" % rsp)
+        log.debug("#8[RestoreClone] Response: %s" % rsp)
         # If list is empty, tell user and end
         if len(rsp) == 0:
             log.debug("There are ZERO saved clones. Exiting.")
