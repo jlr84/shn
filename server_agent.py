@@ -644,8 +644,8 @@ def restoreClone(key, cloneName):
     # Summarize cloning result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
         result4 = ''.join(["VM[", vudName, "] Restored From Clone '",
-                           cloneName, "'\nResult:", result,
-                           "\n DB Save Result: ", result2,
+                           cloneName, "'; Result:", result,
+                           "\nDB Save Result: ", result2,
                            "; ", str(result3), " related snapshots removed",
                            "\nPRIOR DRIVE OFFLINE, stored as: '",
                            newName, "'"])
