@@ -5,6 +5,7 @@ import config
 import dbm
 import subprocess
 import datetime
+import os
 
 
 ######################################
@@ -55,6 +56,32 @@ def getCloneName(currentName):
     return fileName
 
 
+# Return non-used name to use for VUD
+def getVudName():
+    log = logging.getLogger(__name__)
+    log.debug("Finding name for VUD...")
+    fileName = "ERROR"
+
+    # Starting with 1, test if vud name exists until name is found
+    # that does not exist
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join(["vud", str(num)])
+        # Create file path
+        filePath = ''.join(["/etc/xen/", fileName, ".cfg"])
+        log.debug("Trying name: %s" % fileName)
+        log.debug("Trying filepath: %s" % filePath)
+        exists = os.path.isfile(filePath)
+        log.debug("Clone name %s tested as: %s" % (fileName, exists))
+        if exists:
+            num = num + 1
+
+    log.debug("Returning name: %s" % fileName)
+    return fileName
+
+
 # Return name to use for snapshot
 def getSnapshotName(currentName):
     log = logging.getLogger(__name__)
@@ -83,6 +110,59 @@ def getSnapshotName(currentName):
 
     log.debug("Returning name: %s" % fileName)
     return fileName
+
+
+# Return array of clones already saved
+def getCloneList(currentName):
+    log = logging.getLogger(__name__)
+    log.debug("Finding list of saved clone(s)...")
+    fileName = "ERROR"
+    cloneList = []
+
+    # Starting with 1, test if clone name exists until name is found
+    # that does not exist; save each name/time pair to send to user
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join([currentName, "_clone_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+
+        # Attempt to retrieve record
+        try:
+            with dbm.open('cache_agent_history', 'r') as db:
+                oldClone = db.get(fileName)
+                log.debug("Clone name tested as: %s" % oldClone)
+                if oldClone is None:
+                    exists = False
+                else:
+                    # Save name/time to list
+                    pair = [fileName, oldClone.decode("utf-8")]
+                    cloneList.append(pair)
+                    num = num + 1
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Returning %d records" % (num - 1))
+    return cloneList
+
+
+# Save change to current VUD name persistent memory
+def saveNewCurrentVUD(newName):
+    log = logging.getLogger(__name__)
+    log.debug("Saving new current VUD name to memory...")
+    status = "FAILED"
+    try:
+        with dbm.open('cache_agent_history', 'c') as db:
+            # Store name to memory
+            db['current'] = newName
+            log.debug("Saved current VUD name: %s" % newName)
+            status = "SUCCESS"
+    except:
+        log.warning("ERROR writing to cache.")
+
+    return status
 
 
 # Save successful clone name to persistent memory
@@ -402,6 +482,93 @@ def cloneVM(key):
     return result3
 
 
+# Report list of Saved clones for current vm listed in persistent memory
+def cloneList(key):
+    log = logging.getLogger(__name__)
+    log.debug("Getting Clone List...")
+    savedCloneList = []
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    if key == "cloneList":
+        if not vudName == "NONE":
+
+            # Get clone list
+            savedCloneList = getCloneList(vudName)
+            log.debug("Clone List: %s." % (savedCloneList))
+
+        # If vudName == "NONE" THEN:
+        else:
+            log.debug("VM 'NONE' has no clones")
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    return savedCloneList
+
+
+# Restore to clone based on name received and current vm listed in memory
+def restoreClone(key, cloneName):
+    log = logging.getLogger(__name__)
+    log.debug("Restoring VM from Clone...")
+    result = "NO ACTION TAKEN"
+    result2 = "NO RESULT FOR WRITE"
+
+    # Get current VUD name
+    vudName = getCurrentVUD()
+
+    # Get new VUD name
+    newName = getVudName()
+
+    # Make process call string
+    callString = ''.join(["./scripts/restoreFromClone.sh ", vudName,
+                          " ", cloneName, " ", newName])
+    log.debug("Command: %s" % callString)
+
+    if key == "clone":
+        if not vudName == "NONE":
+            log.debug("Executing restore now...")
+            rc = subprocess.call(callString, shell=True)
+            if rc == 0:
+                result = "SUCCESS"
+            elif rc == 1:
+                result = "Failed"
+                print("Restore VM... FAILED")
+                print("Is the Agent running as root/sudo as required?")
+            else:
+                result = "Failed"
+                print("Restore VM... FAILED")
+
+            log.debug("Restore VM %s." % result)
+
+            # Save clone name in persistent memory
+            result2 = saveNewCurrentVUD(newName)
+            log.debug("Saved new curren name to memory: %s" % (newName))
+            log.info("Write to DB result: %s" % result2)
+
+        # If vudName == "NONE" THEN:
+        else:
+            result = "VUD=NONE; NO VUD to restore"
+            log.debug("No VM Restored: %s" % result)
+
+    else:
+        log.debug("Key incorrect. Received: %s" % key)
+
+    # Summarize cloning result prior to sending back to user
+    if result == "SUCCESS" and result2 == "SUCCESS":
+        result3 = ''.join(["Restore VM[", vudName, "]: Restored From Clone '",
+                           cloneName, "' Result:", result, "; NEW VUD Name: '",
+                           newName, "'; DB Save Result: ", result2])
+        log.debug("Result logged as: %s" % result3)
+    else:
+        result3 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
+                           result, ", DB Save Result--", result2])
+        log.debug("Result logged as: %s" % result3)
+
+    return result3
+
+
 # Create snapshot of vm (based on current vm listed in persistent memory)
 def snapshotVM(key):
     log = logging.getLogger(__name__)
@@ -582,6 +749,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(pauseVM, 'pauseVM')
         server.register_function(unpauseVM, 'unpauseVM')
         server.register_function(getVmStatus, 'getVmStatus')
+        server.register_function(cloneList, 'cloneList')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))

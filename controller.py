@@ -216,6 +216,51 @@ def displayAgents(shortList=False):
     return savedResults
 
 
+# Given array of choices, get user choice for restore
+def getUserRestoreChoice(rList):
+    log.debug("Displaying Restore choice list")
+    ans = 0
+
+    # If length is 1, confirm this choice with user
+    if len(rList) == 1:
+        askAgain = True
+        while askAgain:
+            print("\nOnly 1 Restore Option Found:")
+            print("1) %s saved at %s" % (rList[0][0], rList[0][1]))
+            print("Confirm Restore to this VUD?")
+            conf = input("Confirm Yes[y] or No[n]:\n>>> ")
+            if conf in ["yes", "Yes", "YES", "y", "Y"]:
+                ans = 1
+                askAgain = False
+            elif conf in ["no", "No", "NO", "n", "N"]:
+                ans = 0
+                askAgain = False
+            else:
+                print("Invalid Choice: '%s'; Try Again." % conf)
+
+    # If length is > 1, confirm option with user
+    else:
+        askAgain = True
+        while askAgain:
+            print("\n%d Restore Options Found:")
+            print("0) QUIT / EXIT WITHOUT PERFORMING RESTORE")
+            for x in range(len(rList)):
+                print("%d) %s saved at %s" % ((x+1), rList[x][0], rList[x][1]))
+
+            print("Select Restore Point:")
+            print("(Choose a number)")
+            conf = input(">>> ")
+            confInt = int(conf)
+            if confInt in range((len(rList)+1)):
+                ans = confInt
+                askAgain = False
+            else:
+                print("Invalid Choice: '%s'; Try Again." % conf)
+
+    log.debug("Restore Choice Selected: %d" % ans)
+    return ans
+
+
 # Display the choice list for user to pick command
 def displayCommandList():
     log.debug("Displaying Command List...")
@@ -267,6 +312,30 @@ def processCommand(numSelected, thisHost, thisPort):
         rsp = myServer.sendClone(thisHost, thisPort)
         log.debug("#7[Clone] Response: %s" % rsp)
         print("#7[Clone] Response: %s" % rsp)
+    elif numSelected == "8":
+        rsp = myServer.sendCloneListRequest(thisHost, thisPort)
+        log.debug("#8[Snapshot] Response: %s" % rsp)
+        # If list is empty, tell user and end
+        if len(rsp) == 0:
+            log.debug("There are ZERO saved clones. Exiting.")
+            print("There are ZERO saved clones. Exiting.")
+        # If list is not empty, confirm user choice
+        else:
+            log.debug("There are %d options. Verifying choice." % (len(rsp)))
+            resChoice = getUserRestoreChoice(rsp)
+            # If response is 0, exit without restoring
+            if resChoice == 0:
+                log.debug("'0' selected; cancelling restore request")
+                print("'0' selected; cancelling restore request")
+            # Otherwise execute clone based on choice
+            else:
+                restoreName = rsp[(resChoice - 1)][0]
+                log.debug("Req'ing restore to: %s" % (restoreName))
+                rsp2 = myServer.sendRestoreClone(thisHost, thisPort,
+                                                 restoreName)
+                log.debug("#8[RestoreClone] Response: %s" % rsp2)
+                print("#8[RestoreClone] Response: %s" % rsp2)
+
     else:
         print("Functionality NOT implemented or BAD selection.")
 
@@ -420,7 +489,7 @@ def myMenu():
 
 
 # Start of Main
-if __name__ == '__main__':
+if __name__ == '__main__ ':
     log.info("Starting Main.")
     hostIP = getMyIP()
     verifyHostName = findHostName(hostIP)

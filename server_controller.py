@@ -249,6 +249,74 @@ def sendClone(host, port):
     return response
 
 
+# Function for requesting list of saved clones
+def sendCloneListRequest(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Send REQUEST CLONE LIST Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Request Clone List'")
+            response = proxy.cloneList("cloneList")
+            log.info(response)
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
+# Function for requesting restore from clone
+def sendRestoreClone(host, port, rName):
+    log = logging.getLogger(__name__)
+    log.debug("Send Restore from Clone Command executing...")
+
+    # Connect to Agent's server daemon to send command
+    myContext = ssl.create_default_context()
+    myContext.load_verify_locations(config.CACERTFILE)
+
+    thisHost = ''.join(['https://', host, ':', str(port)])
+
+    with xmlrpc.client.ServerProxy(thisHost,
+                                   context=myContext) as proxy:
+
+        try:
+            log.info("Sending Command: 'Restore from Clone %s'" % rName)
+            response = proxy.restoreClone("restore", rName)
+            log.info(response)
+
+        except ConnectionRefusedError:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection to Agent FAILED:")
+            print("Is Agent listening? Confirm and try again.")
+
+        except:
+            log.warning("Connection to Agent FAILED")
+            response = "FAILED"
+            print("Connection Failed. Suspected incorrect URL.")
+            print("Settings used: '%s'" % thisHost)
+
+    return response
+
+
 #####################################################
 # Main Logic for Controller communicating to Agent(s)
 #####################################################
