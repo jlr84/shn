@@ -869,7 +869,8 @@ def restoreSnap(key, snapName):
     vudName = getCurrentVUD()
 
     # Make process call string
-    callString = ''.join(["sudo lvconvert --merge /dev/xen1/", snapName])
+    callString = ''.join(["./scripts/restoreFromSnapshot.sh ", vudName,
+                          " ", snapName])
     log.debug("Command: %s" % callString)
 
     if key == "restore":
@@ -910,7 +911,7 @@ def restoreSnap(key, snapName):
         result4 = ''.join(["VM[", vudName, "] Restored From Snapshot '",
                            snapName, "'; Result:", result,
                            "; DB Save Result: ", result2,
-                           "\nALSO REMOVED ", result3,
+                           "\nALSO REMOVED ", str(result3),
                            " more-recent snapshot(s)"])
         log.debug("Result logged as: %s" % result4)
     else:
