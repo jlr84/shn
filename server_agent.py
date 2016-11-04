@@ -26,23 +26,6 @@ def getCurrentVUD():
     return currentVUD
 
 
-# Remove pair value from persistent memory (leave key in place)
-def removePairValueFromDB(kName):
-    log = logging.getLogger(__name__)
-    log.debug("Removing pair value from key...")
-    status = "FAILED"
-    try:
-        with dbm.open('cache_agent_history', 'c') as db:
-            # Store blank value to key in memory
-            db[kName] = "__ITEM REMOVED (NO LONGER VALID)__"
-            log.debug("Updated value: %s as NOT valid" % kName)
-            status = "SUCCESS"
-    except:
-        log.warning("ERROR writing to cache.")
-
-    return status
-
-
 # Remove entry from persistent memory
 def removeEntryFromDB(entryName):
     log = logging.getLogger(__name__)
@@ -116,6 +99,32 @@ def getVudName():
     return fileName
 
 
+# Remove Snapshot
+def removeOneSnap(snapName):
+    log = logging.getLogger(__name__)
+    log.debug("Removing Snapshot...")
+    result = "NO ACTION TAKEN"
+
+    # Make process call string
+    callString = ''.join(["sudo lvremove -y /dev/xen1/", snapName])
+    log.debug("Command: %s" % callString)
+
+    rc = subprocess.call(callString, shell=True)
+    if rc == 0:
+        result = "Success"
+    elif rc == 1:
+        result = "Failed"
+        print("Remove... FAILED")
+        print("Is the Agent running as root/sudo as required?")
+    else:
+        result = "Failed"
+        print("Remove... FAILED(2)")
+
+    log.debug("Remove %s." % result)
+
+    return result
+
+
 # Rename Snapshots (remove but keep for forensic analysis)
 def renameSnap(snapName, snapTime):
     log = logging.getLogger(__name__)
@@ -160,7 +169,7 @@ def removeSnaps(currentName, dtime):
         log.debug("Trying name: %s" % fileName)
         try:
             with dbm.open('cache_agent_history', 'c') as db:
-                oldSnapshot = (db.get(fileName)).decode("utf-8")
+                oldSnapshot = db.get(fileName)
                 log.debug("Snapshot name tested as: %s" % oldSnapshot)
                 if oldSnapshot is None:
                     exists = False
@@ -177,6 +186,57 @@ def removeSnaps(currentName, dtime):
     log.debug("Removed %d Entries" % (num - 1))
     result = num - 1
     return result
+
+
+# Remove NEWER snapshots
+def removeNewerSnaps(currentName, snapName):
+    log = logging.getLogger(__name__)
+    log.debug("Removing NEWER snapshots from DB...")
+    fileName = "ERROR"
+
+    # Starting with 1, test if vud name exists until name is found
+    # that does not exist
+    exists = True
+    nameFound = False
+    num = 1
+    cnt = 0
+
+    # FIRST, find name that matches snapName
+    while not nameFound and num < 9999:
+        # Create name
+        fileName = ''.join([currentName, "_snap_", str(num)])
+        log.debug("Does name match? %s" % fileName)
+        if fileName == snapName:
+            nameFound = True
+            num = num + 1
+        else:
+            num = num + 1
+
+    # SECOND, remove the remaining names that are present
+    while exists:
+        # Create name (this will first try one number above selected
+        # snapName and then increase until no stored name found)
+        fileName = ''.join([currentName, "_snap_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+        try:
+            with dbm.open('cache_agent_history', 'c') as db:
+                oldSnapshot = db.get(fileName)
+                log.debug("Snapshot name tested as: %s" % oldSnapshot)
+                if oldSnapshot is None:
+                    exists = False
+                else:
+                    num = num + 1
+                    removeEntryFromDB(fileName)
+                    # Rename snapshot
+                    result = removeOneSnap(fileName)
+                    log.debug("Remove Result[%s]: %s" % (fileName, result))
+                    cnt = cnt + 1
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Removed %d Entries" % (cnt))
+    return cnt
 
 
 # Return name to use for snapshot
@@ -803,6 +863,7 @@ def restoreSnap(key, snapName):
     log.debug("Restoring VM from Snapshot...")
     result = "NO ACTION TAKEN"
     result2 = "NO RESULT FOR WRITE"
+    result3 = 0
 
     # Get current VUD name
     vudName = getCurrentVUD()
@@ -828,9 +889,13 @@ def restoreSnap(key, snapName):
             log.debug("Restore VM %s." % result)
 
             # Remove snapshot name from persistent memory
-            result2 = removePairValueFromDB(snapName)
+            result2 = removeEntryFromDB(snapName)
             log.debug("Removed name: %s" % (snapName))
             log.info("Write to DB result: %s" % result2)
+
+            # Remove related snapshots newer than this one
+            result3 = removeNewerSnaps(vudName, snapName)
+            log.debug("RemoveNewerSnaps Complete; result: %d" % result3)
 
         # If vudName == "NONE" THEN:
         else:
@@ -842,16 +907,18 @@ def restoreSnap(key, snapName):
 
     # Summarize restore result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
-        result3 = ''.join(["VM[", vudName, "] Restored From Snapshot '",
+        result4 = ''.join(["VM[", vudName, "] Restored From Snapshot '",
                            snapName, "'; Result:", result,
-                           "; DB Save Result: ", result2])
-        log.debug("Result logged as: %s" % result3)
+                           "; DB Save Result: ", result2,
+                           "\nALSO REMOVED ", result3,
+                           " more-recent snapshot(s)"])
+        log.debug("Result logged as: %s" % result4)
     else:
-        result3 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
+        result4 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
                            result, ", DB Save Result--", result2])
-        log.debug("Result logged as: %s" % result3)
+        log.debug("Result logged as: %s" % result4)
 
-    return result3
+    return result4
 
 
 # Receive report of FAILED Agent Registration
