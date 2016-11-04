@@ -489,7 +489,7 @@ def myMenu():
 
 
 # Start of Main
-if __name__ == '__main__ ':
+if __name__ == '__main__':
     log.info("Starting Main.")
     hostIP = getMyIP()
     verifyHostName = findHostName(hostIP)
