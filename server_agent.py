@@ -99,8 +99,36 @@ def getVudName():
     return fileName
 
 
-# Remove all associated snapshots from memory
-def removeSnapsFromDB(currentName):
+# Rename Snapshots (remove but keep for forensic analysis)
+def renameSnap(snapName, snapTime):
+    log = logging.getLogger(__name__)
+    log.debug("Renaming Snapshot...")
+    result = "NO ACTION TAKEN"
+
+    # Make process call string
+    callString = ''.join(["sudo lvs rename /dev/xen1/", snapName,
+                          " /dev/xen1/OFFLINE_", snapName,
+                          "_", snapTime])
+    log.debug("Command: %s" % callString)
+
+    rc = subprocess.call(callString, shell=True)
+    if rc == 0:
+        result = "Success"
+    elif rc == 1:
+        result = "Failed"
+        print("Rename... FAILED")
+        print("Is the Agent running as root/sudo as required?")
+    else:
+        result = "Failed"
+        print("Rename... FAILED(2)")
+
+    log.debug("Rename %s." % result)
+
+    return result
+
+
+# Remove all associated snapshots
+def removeSnaps(currentName, dtime):
     log = logging.getLogger(__name__)
     log.debug("Removing related snapshots from DB...")
     fileName = "ERROR"
@@ -122,6 +150,9 @@ def removeSnapsFromDB(currentName):
                 else:
                     num = num + 1
                     removeEntryFromDB(fileName)
+                    # Rename snapshot
+                    result = renameSnap(fileName, dtime)
+                    log.debug("Rename Result[%s]: %s" % (fileName, result))
         except:
             log.warning("No cache found or read failed")
             exists = False
@@ -597,8 +628,8 @@ def restoreClone(key, cloneName):
             result2 = removeEntryFromDB(cloneName)
             log.debug("Removed name: %s" % (cloneName))
             log.info("Write to DB result: %s" % result2)
-            # Remove related snapshots from persistent memory
-            result3 = removeSnapsFromDB(vudName)
+            # Remove related snapshots
+            result3 = removeSnaps(vudName, timeOff)
 
         # If vudName == "NONE" THEN:
         else:
