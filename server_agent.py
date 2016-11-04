@@ -576,10 +576,10 @@ def restoreClone(key, cloneName):
 
     # Summarize cloning result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
-        result3 = ''.join(["Restore VM[", vudName, "]: Restored From Clone '",
-                           cloneName, "' Result:", result,
+        result3 = ''.join(["VM[", vudName, "] Restored From Clone '",
+                           cloneName, "'\nResult:", result,
                            "; DB Save Result: ", result2,
-                           "PRIOR DRIVE OFFLINE, stored as: '",
+                           "\nPRIOR DRIVE OFFLINE, stored as: '",
                            newName, "'"])
         log.debug("Result logged as: %s" % result3)
     else:
