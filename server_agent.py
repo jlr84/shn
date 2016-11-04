@@ -143,7 +143,7 @@ def removeSnaps(currentName, dtime):
         log.debug("Trying name: %s" % fileName)
         try:
             with dbm.open('cache_agent_history', 'c') as db:
-                oldSnapshot = db.get(fileName)
+                oldSnapshot = (db.get(fileName)).decode("utf-8")
                 log.debug("Snapshot name tested as: %s" % oldSnapshot)
                 if oldSnapshot is None:
                     exists = False
@@ -158,7 +158,8 @@ def removeSnaps(currentName, dtime):
             exists = False
 
     log.debug("Removed %d Entries" % (num - 1))
-    return (num - 1)
+    result = num - 1
+    return result
 
 
 # Return name to use for snapshot
@@ -601,7 +602,7 @@ def restoreClone(key, cloneName):
     # Set alternate name for current VUD (do NOT delete to
     # allow forensic analysis later)
     timeOff = datetime.datetime.now().strftime('%Y%b%d_%H%Mh')
-    newName = ''.join([vudName, "_OFFLINE_", timeOff])
+    newName = ''.join(["OFFLINE_", vudName, "_", timeOff])
 
     # Make process call string
     callString = ''.join(["./scripts/restoreFromClone.sh ", vudName,
@@ -630,6 +631,7 @@ def restoreClone(key, cloneName):
             log.info("Write to DB result: %s" % result2)
             # Remove related snapshots
             result3 = removeSnaps(vudName, timeOff)
+            log.debug("RemoveSnaps Complete; result: %d" % result3)
 
         # If vudName == "NONE" THEN:
         else:
@@ -644,7 +646,7 @@ def restoreClone(key, cloneName):
         result4 = ''.join(["VM[", vudName, "] Restored From Clone '",
                            cloneName, "'\nResult:", result,
                            "\n DB Save Result: ", result2,
-                           "; ", result3, " related snapshots removed",
+                           "; ", str(result3), " related snapshots removed",
                            "\nPRIOR DRIVE OFFLINE, stored as: '",
                            newName, "'"])
         log.debug("Result logged as: %s" % result4)
