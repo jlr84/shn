@@ -750,6 +750,7 @@ def runServer(ipAdd, portNum, serverCert, serverKey):
         server.register_function(unpauseVM, 'unpauseVM')
         server.register_function(getVmStatus, 'getVmStatus')
         server.register_function(cloneList, 'cloneList')
+        server.register_function(restoreClone, 'restoreClone')
 
         # Start server listening [forever]
         log.info("Server listening on port %d..." % (portNum))

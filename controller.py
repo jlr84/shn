@@ -242,7 +242,7 @@ def getUserRestoreChoice(rList):
     else:
         askAgain = True
         while askAgain:
-            print("\n%d Restore Options Found:")
+            print("\n%d Restore Options Found:" % (len(rList)))
             print("0) QUIT / EXIT WITHOUT PERFORMING RESTORE")
             for x in range(len(rList)):
                 print("%d) %s saved at %s" % ((x+1), rList[x][0], rList[x][1]))
