@@ -99,6 +99,37 @@ def getVudName():
     return fileName
 
 
+# Remove all associated snapshots from memory
+def removeSnapsFromDB(currentName):
+    log = logging.getLogger(__name__)
+    log.debug("Removing related snapshots from DB...")
+    fileName = "ERROR"
+
+    # Starting with 1, test if vud name exists until name is found
+    # that does not exist
+    exists = True
+    num = 1
+    while exists:
+        # Create name
+        fileName = ''.join([currentName, "_snap_", str(num)])
+        log.debug("Trying name: %s" % fileName)
+        try:
+            with dbm.open('cache_agent_history', 'c') as db:
+                oldSnapshot = db.get(fileName)
+                log.debug("Snapshot name tested as: %s" % oldSnapshot)
+                if oldSnapshot is None:
+                    exists = False
+                else:
+                    num = num + 1
+                    removeEntryFromDB(fileName)
+        except:
+            log.warning("No cache found or read failed")
+            exists = False
+
+    log.debug("Removed %d Entries" % (num - 1))
+    return (num - 1)
+
+
 # Return name to use for snapshot
 def getSnapshotName(currentName):
     log = logging.getLogger(__name__)
@@ -531,6 +562,7 @@ def restoreClone(key, cloneName):
     log.debug("Restoring VM from Clone...")
     result = "NO ACTION TAKEN"
     result2 = "NO RESULT FOR WRITE"
+    result3 = 0
 
     # Get current VUD name
     vudName = getCurrentVUD()
@@ -565,6 +597,8 @@ def restoreClone(key, cloneName):
             result2 = removeEntryFromDB(cloneName)
             log.debug("Removed name: %s" % (cloneName))
             log.info("Write to DB result: %s" % result2)
+            # Remove related snapshots from persistent memory
+            result3 = removeSnapsFromDB(vudName)
 
         # If vudName == "NONE" THEN:
         else:
@@ -576,18 +610,19 @@ def restoreClone(key, cloneName):
 
     # Summarize cloning result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
-        result3 = ''.join(["VM[", vudName, "] Restored From Clone '",
+        result4 = ''.join(["VM[", vudName, "] Restored From Clone '",
                            cloneName, "'\nResult:", result,
-                           "; DB Save Result: ", result2,
+                           "\n DB Save Result: ", result2,
+                           "; ", result3, " related snapshots removed",
                            "\nPRIOR DRIVE OFFLINE, stored as: '",
                            newName, "'"])
-        log.debug("Result logged as: %s" % result3)
+        log.debug("Result logged as: %s" % result4)
     else:
-        result3 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
+        result4 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",
                            result, ", DB Save Result--", result2])
-        log.debug("Result logged as: %s" % result3)
+        log.debug("Result logged as: %s" % result4)
 
-    return result3
+    return result4
 
 
 # Create snapshot of vm (based on current vm listed in persistent memory)
