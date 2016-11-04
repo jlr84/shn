@@ -106,7 +106,7 @@ def renameSnap(snapName, snapTime):
     result = "NO ACTION TAKEN"
 
     # Make process call string
-    callString = ''.join(["sudo lvs rename /dev/xen1/", snapName,
+    callString = ''.join(["sudo lvrename /dev/xen1/", snapName,
                           " /dev/xen1/OFFLINE_", snapName,
                           "_", snapTime])
     log.debug("Command: %s" % callString)
