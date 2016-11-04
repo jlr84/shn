@@ -26,6 +26,23 @@ def getCurrentVUD():
     return currentVUD
 
 
+# Remove entry from persistent memory
+def removeEntryFromDB(entryName):
+    log = logging.getLogger(__name__)
+    log.debug("Removing entry from DB...")
+    response = "NO ACTION TAKEN"
+    try:
+        with dbm.open('cache_agent_history', 'c') as db:
+            del db[entryName]
+            log.debug("Entry '%s' deleted" % entryName)
+            response = "SUCCESS"
+    except:
+        log.debug("Unknown error. Delete failed")
+        response = "ERROR"
+
+    return response
+
+
 # Return name to use for clone
 def getCloneName(currentName):
     log = logging.getLogger(__name__)
@@ -518,15 +535,17 @@ def restoreClone(key, cloneName):
     # Get current VUD name
     vudName = getCurrentVUD()
 
-    # Get new VUD name
-    newName = getVudName()
+    # Set alternate name for current VUD (do NOT delete to
+    # allow forensic analysis later)
+    timeOff = datetime.datetime.now().strftime('%Y%b%d_%H%Mh')
+    newName = ''.join([vudName, "_OFFLINE_", timeOff])
 
     # Make process call string
     callString = ''.join(["./scripts/restoreFromClone.sh ", vudName,
                           " ", cloneName, " ", newName])
     log.debug("Command: %s" % callString)
 
-    if key == "clone":
+    if key == "restore":
         if not vudName == "NONE":
             log.debug("Executing restore now...")
             rc = subprocess.call(callString, shell=True)
@@ -542,9 +561,9 @@ def restoreClone(key, cloneName):
 
             log.debug("Restore VM %s." % result)
 
-            # Save clone name in persistent memory
-            result2 = saveNewCurrentVUD(newName)
-            log.debug("Saved new curren name to memory: %s" % (newName))
+            # Remove clone name from persistent memory
+            result2 = removeEntryFromDB(cloneName)
+            log.debug("Removed name: %s" % (cloneName))
             log.info("Write to DB result: %s" % result2)
 
         # If vudName == "NONE" THEN:
@@ -558,8 +577,10 @@ def restoreClone(key, cloneName):
     # Summarize cloning result prior to sending back to user
     if result == "SUCCESS" and result2 == "SUCCESS":
         result3 = ''.join(["Restore VM[", vudName, "]: Restored From Clone '",
-                           cloneName, "' Result:", result, "; NEW VUD Name: '",
-                           newName, "'; DB Save Result: ", result2])
+                           cloneName, "' Result:", result,
+                           "; DB Save Result: ", result2,
+                           "PRIOR DRIVE OFFLINE, stored as: '",
+                           newName, "'"])
         log.debug("Result logged as: %s" % result3)
     else:
         result3 = ''.join(["Restore VM[", vudName, "] FAILED: Restore Result--",

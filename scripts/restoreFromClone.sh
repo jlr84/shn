@@ -1,6 +1,7 @@
 #!/bin/bash
 # CLONE VM: This is a script to restore to a clone when 
-# given a clone name and the current vm to stop
+# given a clone name, the current name, and a name to save 
+# the old VM hard drive to.
 # NOTE: vm stopped is NOT deleted (simply shutdown, to 
 # retain for forensics analysis [future work])
 
@@ -22,24 +23,25 @@ echo "Stopping Current VUD/VM, $CURRENTVM..."
 sudo xl shutdown $CURRENTVM
 
 
-# Step 2: Change clone lvs name match new vud name
-echo "Changing Clone name from $CLONENAME to $NEWNAME"
-sudo lvrename /dev/xen1/$CLONENAME /dev/xen1/$NEWNAME
+# Step 2: Rename CURRENT(OLD) lvs to new name
+echo "Changing CURRENT(OLD) lvs from $CURRENTVM to $NEWNAME"
+sudo lvrename /dev/xen1/$CURRENTVM /dev/xen1/$NEWNAME
+
+
+# Step 3: Rename CLONE lvs to CURRENT(NEW) name
+echo "Changing CLONE lvs to CURRENT(NEW) name: from $CLONENAME to $CURRENTVM"
+sudo lvrename /dev/xen1/$CLONENAME /dev/xen1/$CURRENTVM
 
 # Verify name change
-echo "VERIFY Name Changed to $NEWNAME:"
+echo "VERIFY Names Changed:"
 sudo lvs
 
 
-# Step 3: Rename config file to match new name
-# a) Change name of file
-echo "Updating config file name"
-sudo mv /etc/xen/$CLONENAME.cfg /etc/xen/$NEWNAME.cfg
-
-# b) Swap clone name for new name 
-grep -rl "$CLONENAME" /etc/xen/$NEWNAME.cfg | xargs sudo sed -i "s/$CLONENAME/$NEWNAME/g"
+# Step 4: Remove config file for clone (no longer needed)
+echo "Removing Clone config file no longer needed"
+sudo rm /etc/xen/$CLONENAME.cfg
 
 
-# Step 4: Start NEW VUD/VM 
-echo "Starting restored VM now, named $NEWNAME."
-sudo xl create /etc/xen/$NEWNAME.cfg
+# Step 5: Start Newly restored VUD/VM 
+echo "Starting restored VM now, named $CURRENTVM."
+sudo xl create /etc/xen/$CURRENTVM.cfg
