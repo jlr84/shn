@@ -26,6 +26,23 @@ def getCurrentVUD():
     return currentVUD
 
 
+# Remove pair value from persistent memory (leave key in place)
+def removePairValueFromDB(kName):
+    log = logging.getLogger(__name__)
+    log.debug("Removing pair value from key...")
+    status = "FAILED"
+    try:
+        with dbm.open('cache_agent_history', 'c') as db:
+            # Store blank value to key in memory
+            db[kName] = "__ITEM REMOVED (NO LONGER VALID)__"
+            log.debug("Updated value: %s as NOT valid" % kName)
+            status = "SUCCESS"
+    except:
+        log.warning("ERROR writing to cache.")
+
+    return status
+
+
 # Remove entry from persistent memory
 def removeEntryFromDB(entryName):
     log = logging.getLogger(__name__)
@@ -211,13 +228,13 @@ def getCloneList(currentName):
         # Attempt to retrieve record
         try:
             with dbm.open('cache_agent_history', 'r') as db:
-                oldClone = (db.get(fileName)).decode("utf-8")
+                oldClone = db.get(fileName)
                 log.debug("Clone name tested as: %s" % oldClone)
                 if oldClone is None:
                     exists = False
                 else:
                     # Save name/time to list
-                    pair = [fileName, oldClone]
+                    pair = [fileName, (oldClone.decode("utf-8"))]
                     cloneList.append(pair)
                     num = num + 1
         except:
@@ -247,13 +264,13 @@ def getSnapList(currentName):
         # Attempt to retrieve record
         try:
             with dbm.open('cache_agent_history', 'r') as db:
-                oldSnap = (db.get(fileName)).decode("utf-8")
+                oldSnap = db.get(fileName)
                 log.debug("Snapshot name tested as: %s" % oldSnap)
                 if oldSnap is None:
                     exists = False
                 else:
                     # Save name/time to list
-                    pair = [fileName, oldSnap]
+                    pair = [fileName, (oldSnap.decode("utf-8"))]
                     snapList.append(pair)
                     num = num + 1
         except:
@@ -811,7 +828,7 @@ def restoreSnap(key, snapName):
             log.debug("Restore VM %s." % result)
 
             # Remove snapshot name from persistent memory
-            result2 = removeEntryFromDB(snapName)
+            result2 = removePairValueFromDB(snapName)
             log.debug("Removed name: %s" % (snapName))
             log.info("Write to DB result: %s" % result2)
 
