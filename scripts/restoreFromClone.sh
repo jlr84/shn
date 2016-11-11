@@ -43,5 +43,5 @@ sudo rm /etc/xen/$CLONENAME.cfg
 
 
 # Step 5: Start Newly restored VUD/VM 
-echo "Starting restored VM now, named $CURRENTVM."
-sudo xl create /etc/xen/$CURRENTVM.cfg
+#echo "Starting restored VM now, named $CURRENTVM."
+#sudo xl create /etc/xen/$CURRENTVM.cfg

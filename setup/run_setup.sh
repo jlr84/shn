@@ -46,8 +46,8 @@ echo "--SHN-- Updating host's packages with 'apt-get update'."
 sudo apt-get update
 
 # Install pip | debconf
-echo "--SHN-- Installing pip (for python3) & debconf-utils."
-sudo apt-get -y install python3-pip debconf-utils
+echo "--SHN-- Installing pip (for python3), debconf-utils & libssl-dev."
+sudo apt-get -y install python3-pip debconf-utils libssl-dev
 
 # Install project requirements using pip (based on 'requirements.txt')
 # Note: Assumption that 'requipments.txt' is in parent directory
