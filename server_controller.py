@@ -385,6 +385,44 @@ def sendRestoreClone(host, port, rName):
     return response
 
 
+# Function for fixing compromised host
+def fixHostNow(host, port):
+    log = logging.getLogger(__name__)
+    log.debug("Fix Host Now Command executing...")
+    # TODO Make this logic more robust and add error checking
+
+    # First, STOP host NOW!
+    r1 = sendStop(host, port)
+    log.debug("Stop Bad Host status: %s" % r1)
+
+    # Second, GET options for RESTORE
+    rOptions = sendCloneListRequest(host, port)
+    log.debug("Clone Options Quantity: %d" % len(rOptions))
+    log.debug("Clone Options: %s" % rOptions)
+
+    # Third, Process options
+    if len(rOptions) == 0:
+        # If no option availabe, tell user this...
+        log.debug("There are ZERO saved clones. Unable to restore.")
+        print("There are ZERO saved clones. Unable to restore.")
+    else:
+        # If there are options, take the newest clone to restore with...
+        rNum = len(rOptions)
+        restoreName = rOptions[(rNum - 1)][0]
+        log.debug("Requesting restore to: %s" % (restoreName))
+
+        # Fourth, RESTORE host
+        r2 = sendRestoreClone(host, port, restoreName)
+        log.debug("Restore Response: %s" % r2)
+        print("Result of Cleanup: %s" % r2)
+
+        # Fifth, START host again...
+        log.debug("Starting host now...")
+        time.sleep(10)
+        r3 = sendStart(host, port)
+        log.debug("Result of re-start: %s" % r3)
+
+
 #####################################################
 # Main Logic for Controller communicating to Agent(s)
 #####################################################
@@ -528,8 +566,8 @@ def controlAgent(host, port, agtAlias):
             else:
                 log.debug("Host '%s' INFECTED!! as of '%s'." % (host, thisTime))
                 print("Host '%s' INFECTED!! as of '%s'." % (host, thisTime))
-                # TODO Make function to take appropriate action
-
+                print("TAKING ACTION NOW!")
+                fixHostNow(host, port)
             log.debug("Monitor query update successful")
         except:
             # Rollback in case there is any error
