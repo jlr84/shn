@@ -836,7 +836,7 @@ if __name__ == '__main__':
                        Agent on non-Xen host.)", action="store_true")
     parser.add_argument("-c", "--controller", help="set hostname of controller\
                         (default='controller.shn.local')")
-    parser.add_argument("-p", "--port", help="set port of monitor\
+    parser.add_argument("-p", "--port", help="set port of controller\
                         (default='35353')", type=int)
     parser.add_argument("-F", "--fresh", help="start fresh: remove previous\
                         VM/VUD clone/snapshot history before\
