@@ -31,7 +31,7 @@ CREATE TABLE agents
 	PRIMARY KEY (id));
 
 -- Create monitor user and grant privileges
-GRANT SELECT, INSERT, UPDATE, DELETE
+GRANT SELECT, INSERT
 ON shn_database.status
 TO 'monitor_admin'@'localhost'
 IDENTIFIED BY 'monitorPassword';
