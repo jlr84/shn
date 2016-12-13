@@ -1,10 +1,17 @@
 #!/bin/bash
 # This is an initial setup sript for my SHN project (See: https://github.com/jlr84/shn )
+# This is a shorter setup script for use with the ESM on a separate system (without 
+# the monitor/controller/agent)
+# The main difference is that this is not as dependant on Python 3.5, so that is not 
+# checked, and MySQL is not required, to MySQL setup steps are removed. 
+# 
+#!!!!
+# ADDITIONALLY, the controller/monitor ip addresses have to be manually set!!!
+#!!!!
+MONITOR_IP=172.31.31.112
+CONTROLLER_IP=172.31.31.112
 
 echo "--SHN-- Starting Setup Script."
-
-# Ensure necessary files are present prior to executing script
-echo "--SHN-- Checking to ensure necessary files are present prior to executing..."
 
 # Update packages
 echo "--SHN-- Updating host's packages with 'apt-get update'."
@@ -36,8 +43,8 @@ sudo cp /etc/hosts /etc/hosts.shnbackup
 
 # Add default values to shntemp file (along with copy of current /etc/hosts)
 sudo echo "$IPADD   agent1.shn.local       agent1" | cat - /etc/hosts > shntemp && sudo mv shntemp shntemp2
-sudo echo "172.31.31.112   monitor.shn.local      monitor" | cat - shntemp2 > shntemp && sudo mv shntemp shntemp2
-sudo echo "172.31.31.112   controller.shn.local   controller" | cat - shntemp2 > shntemp && sudo rm shntemp2
+sudo echo "$MONITOR_IP   monitor.shn.local      monitor" | cat - shntemp2 > shntemp && sudo mv shntemp shntemp2
+sudo echo "$CONTROLLER_IP   controller.shn.local   controller" | cat - shntemp2 > shntemp && sudo rm shntemp2
 
 # Change permissions / owndership of temp file to match /etc/hosts file
 echo "--SHN-- New/updated [temporary] hosts file created; adjusting ownership/permission to match original hosts flie."
