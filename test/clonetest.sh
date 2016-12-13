@@ -1,5 +1,9 @@
 #!/bin/bash
-# CLONE VM: This is a script to clone a VM for the SHNet project
+# clonetest.sh -- This file performs the same function as 
+# ../scripts/clone.sh, except this measures the amount of
+# time required for this action to complete. The start time,
+# end time, and total elapsed time is output to the 
+# terminal for the user.
 
 # SETTINGS:
 # Note: Currently set to take the names for cloning as the 
