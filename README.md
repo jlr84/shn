@@ -5,7 +5,7 @@ The goal of this project is to produce a “self-healing” network (SHNet) that
 
 SHNet operation is supported by the use of a hypervisor and virtualized user desktop (VUD) for each [user, non-server] end-host within the network. This structure allows each end-user to operate a virtualized desktop, while SHNet-related communication remains at the hypervisor level, one layer below the end-user. 
 
-This project consists of four main components: A **Monitor** node receives regular updates from each VUD operated on the network via an **End-host Security Monitor (ESM)** running on each VUD. The ESM identifies the associated health/security status of the VUD as either 'CLEAN' or 'COMPROMISED' and transmits this status to the Monitor node. (Note: In this project the ESM is simply simulating the detection of a compromised end-host, whereas a full-fledged commercial product would be used in a real-world setting.) A **Controller** node reads the network health/security status maintained by the Monitor and takes action as necessary to mitigate any concerns. The Controller takes necessary action by communicating with an **SHNet Agent** running at the hypervisor level of each end-host. By communicating with the Agent, the Controller takes action to restore, snapshot, or otherwise roll-back each VUD to a time-period prior to suspected compromise.
+This project consists of four main components: A **Monitor** node receives regular updates from each VUD operated on the network via an **End-host Security Monitor (ESM)** running on each VUD. The ESM identifies the associated health/security status of the VUD as either 'CLEAN' or 'COMPROMISED' and transmits this status to the Monitor node. (Note: In this project the ESM is simply simulating the detection of a compromised end-host, whereas a full-fledged commercial product would be used in a real-world setting.) A **Controller** node reads the network health/security status maintained by the Monitor and takes action as necessary to mitigate any concerns. The Controller takes necessary action by communicating with an **SHNet Agent** running at the hypervisor level of each end-host. By communicating with the Agent, the Controller takes action to restore, snapshot, or otherwise roll back each VUD to a time period prior to suspected compromise.
 
 ## Getting Started
 
@@ -195,19 +195,19 @@ If all of the above worked successfully, the SHNet local install is confirmed su
 
 Running SHNet in this configuration will work for development and (basic) testing; however, full functionality is not present.  
 
-These are the main limitations of this, limited, install:  
+These are the main limitations of this limited install:  
 * The Agent Module is NOT running within a Xen-based hypervisor. This results in any functionality related to actually controlling VUD's (VMs) **being non-functional**. 
 * The ESM Module is NOT running inside a VUD, as designed and described above. Correct implementation would include the ESM automatically running upon the start of each VUD. 
 
 
 ## Deployment
 
-To setup SHNet for full functionality, start with the above basic setup. Perform the basic setup on the host you intend to run the Monitor and Controller modules. With that complete, do the following: 
+To set up SHNet for full functionality, start with the above basic setup. Perform the basic setup on the host you intend to run the Monitor and Controller modules. With that complete, do the following: 
 
 ### Agent Setup
 
 **Step 1: Install Ubuntu with Xen**  
-On a second host, follow the directions listed below under *Additional References: Xen Project Hypervisor Install* to setup an Ubuntu Xen Machine.
+On a second host, follow the directions listed below under *Additional References: Xen Project Hypervisor Install* to set up an Ubuntu Xen Machine.
 
 **Step 2: Create Base VM (VUD) Image**  
 (Reference the *Manually Create a PV Guest VM* section of https://help.ubuntu.com/community/Xen for more detail.)
@@ -241,7 +241,7 @@ $ wget http://mirrors.rit.edu/ubuntu/ubuntu/dists/trusty/main/installer-amd64/cu
 $ wget http://mirrors.rit.edu/ubuntu/ubuntu/dists/trusty/main/installer-amd64/current/images/netboot/xen/initrd.gz
 ```
 
-Setup initial guest configuration:
+Set up initial guest configuration:
 ```
 $ cd /etc/xen
 $ cp xlexample.pvlinux vud1.cfg
@@ -271,7 +271,7 @@ Boot the VM for the first time with the following command. Follow the typical se
 $ sudo xl create -c /etc/xen/vud1.cfg
 ```
 
-Once install is complete, shutdown the VM. First disconnect from the console, then shutdown the VM.
+Once install is complete, shut down the VM. First disconnect from the console, then shut down the VM.
 ```
 [Press CTRL + ] to disconnect from console]
 $ sudo xl shutdown vud1
@@ -333,7 +333,7 @@ $ ./run_setup.sh
 ```
 
 ### ESM Setup   
-Starting from the hypervisor level, follow these instructions to setup the ESM module:
+Starting from the hypervisor level, follow these instructions to set up the ESM module:
 
 Start the VM/VUD that was initially created above (or connect to the terminal/console if it is already running):
 ```
@@ -507,7 +507,7 @@ make test
 sudo make install
 ```
 
-Optionally, you may want to consider installing in parralel with your current version of Python; if so, reference the instructions found here:
+Optionally, you may want to consider installing in parallel with your current version of Python; if so, reference the instructions found here:
 ```
 http://askubuntu.com/questions/680824/how-do-i-update-python-from-3-4-3-to-3-5
 ```
@@ -543,7 +543,7 @@ Name                                        ID   Mem VCPUs      State   Time(s)
 Domain-0                                     0   945     1     r-----      11.3
 ```
 
-(6) Setup Network Configuration
+(6) Set up Network Configuration
 Disable the Network Manager
 ```
 $ sudo stop network-manager
@@ -555,7 +555,7 @@ Install Bridge-Utils
 sudo apt-get install bridge-utils
 ```
 
-Configure your network interfaces (this is what I used successfully:)
+Configure your network interfaces (this is what I used successfully):
 ```
 $ sudo vi /etc/network/interfaces
 auto lo enp0s25
