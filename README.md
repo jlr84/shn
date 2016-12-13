@@ -66,7 +66,7 @@ $ cd shn/setup;
 $ ./run_setup.sh
 ```
 
-Initial Setup is complete, which included:
+The above step completes initial setup, which includes:
 * Install of necessary supporting packages
 * Install of all packages included in requirements.txt
 * Install of MariaDB
@@ -78,7 +78,7 @@ Recommendation: Change mysql root password, as this is not needed after this poi
 **Step 5: Verify Install**  
 This is a step-by step example that will verify everything is operating as expected:  
 
-OPEN four (4) different terminals (change directory to the 'shn/' folder in each terminal).
+**OPEN four (4) different terminals (change directory to the 'shn/' folder in each terminal).**
 
 **TERMINAL 1**  
 Start the CONTROLLER.
@@ -123,8 +123,10 @@ Make a Choice
 **TERMINAL 3**  
 Start the AGENT. 
 ```
-$ python3 agent.py controller.shn.local
-Using controller hostname: 'controller.shn.local'
+$ python3 agent.py NONE --NO_VUD
+NO_VUD Mode selected: Agent running without full functionality. (No access to VUD.)
+Using default controller hostname: controller.shn.local
+Using default controller port#: 35353
 Host IP: 1##.##.##.112
 Alias: agent1
 Certfiles Verified Present
@@ -156,7 +158,7 @@ $ python3 esm.py
 Using default monitor hostname: monitor.shn.local
 Using default monitor port#: 36363
 Using alias: agent1
-Host IP: 172.31.31.112
+Host IP: 1##.##.##.112
 Certfiles Verified Present
 
 
